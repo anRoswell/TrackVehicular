@@ -19,6 +19,13 @@
     </ion-toolbar>
   </ion-header>
 
+  <!-- FAB para abrir modal de agregar vehículo -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="openAddVehicleModal()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
   <ion-list>
     @for (vehicle of getVehicles(); track vehicle.id) {
       <ion-item>

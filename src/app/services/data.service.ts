@@ -148,4 +148,10 @@ export class DataService {
       .sort((a, b) => b.expiresAt.localeCompare(a.expiresAt));
     return docs.length ? docs[0] : undefined;
   }
+
+  public addVehicleDocument(d: VehicleDocument) {
+    const next = this.vehicleDocuments.length ? Math.max(...this.vehicleDocuments.map(x => x.id)) + 1 : 0;
+    d.id = next;
+    this.vehicleDocuments.push(d);
+  }
 }

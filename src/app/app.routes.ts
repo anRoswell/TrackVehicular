@@ -11,6 +11,10 @@ export const routes: Routes = [
       import('./view-message/view-message.page').then((m) => m.ViewMessagePage),
   },
   {
+    path: 'register',
+    loadComponent: () => import('./register/register.page').then(m => m.RegisterPage),
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full',

@@ -1,0 +1,70 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="cancel()">Cancelar</ion-button>
+    </ion-buttons>
+    <ion-title>Agregar vehículo</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="save()">Guardar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Datos del vehículo</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label position="stacked">Placa</ion-label>
+        <ion-input placeholder="ABC123" (ionInput)="newVehicle.plate = $any($event).target.value"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Tipo</ion-label>
+        <ion-select (ionChange)="newVehicle.type = $event.detail.value">
+          <ion-select-option value="Car">Carro</ion-select-option>
+          <ion-select-option value="Motorcycle">Moto</ion-select-option>
+          <ion-select-option value="Truck">Camión</ion-select-option>
+          <ion-select-option value="Van">Furgoneta</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Marca</ion-label>
+        <ion-input (ionInput)="newVehicle.make = $any($event).target.value"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Modelo</ion-label>
+        <ion-input (ionInput)="newVehicle.model = $any($event).target.value"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Año</ion-label>
+        <ion-input type="number" (ionInput)="newVehicle.year = $any($event).target.value ? +$any($event).target.value : undefined"></ion-input>
+      </ion-item>
+
+      <ion-item-divider>SOAT</ion-item-divider>
+      <ion-item>
+        <ion-label position="stacked">Emitido</ion-label>
+        <ion-datetime (ionChange)="soatIssued = $any($event).detail.value"></ion-datetime>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Vence</ion-label>
+        <ion-datetime (ionChange)="soatExpires = $any($event).detail.value"></ion-datetime>
+      </ion-item>
+
+      <ion-item-divider>TecnoMecánica</ion-item-divider>
+      <ion-item>
+        <ion-label position="stacked">Emitido</ion-label>
+        <ion-datetime (ionChange)="tecIssued = $any($event).detail.value"></ion-datetime>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Vence</ion-label>
+        <ion-datetime (ionChange)="tecExpires = $any($event).detail.value"></ion-datetime>
+      </ion-item>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

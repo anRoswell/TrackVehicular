@@ -1,0 +1,54 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Registro</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Crear cuenta</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item>
+          <ion-label position="stacked">Nombre *</ion-label>
+          <ion-input [(ngModel)]="user.nombre" placeholder="Nombre"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Apellido *</ion-label>
+          <ion-input [(ngModel)]="user.apellido" placeholder="Apellido"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Fecha de nacimiento</ion-label>
+          <ion-datetime display-format="DD MMM YYYY" [(ngModel)]="user.nacimiento"></ion-datetime>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Sexo</ion-label>
+          <ion-select [(ngModel)]="user.sexo">
+            <ion-select-option value="M">Masculino</ion-select-option>
+            <ion-select-option value="F">Femenino</ion-select-option>
+            <ion-select-option value="O">Otro</ion-select-option>
+          </ion-select>
+        </ion-item>
+        <ion-item>
+          <ion-label position="stacked">Correo *</ion-label>
+          <ion-input type="email" [(ngModel)]="user.correo" placeholder="correo@ejemplo.com"></ion-input>
+        </ion-item>
+
+        <ion-item lines="none">
+          <ion-button expand="full" (click)="save()">Registrar</ion-button>
+        </ion-item>
+
+        <ion-item-divider></ion-item-divider>
+
+        <ion-item lines="none">
+          <ion-button expand="full" color="primary" (click)="socialSignIn('google')">Continuar con Google</ion-button>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-button expand="full" color="secondary" (click)="socialSignIn('facebook')">Continuar con Facebook</ion-button>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
