@@ -1,0 +1,14 @@
+::ng-deep .selected {
+  border-left: 4px solid var(--ion-color-primary);
+  --padding-start: calc(var(--ion-padding, 16px) - 4px);
+}
+
+ion-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ion-color-step-150, #e7e7e7);
+}

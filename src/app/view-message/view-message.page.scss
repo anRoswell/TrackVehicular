@@ -48,3 +48,19 @@ h1 {
 p {
   line-height: 1.4;
 }
+
+.pico-placa-status {
+  padding: 12px;
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+  margin: 8px 0;
+}
+
+.pico-placa-active {
+  background-color: var(--ion-color-danger);
+}
+
+.pico-placa-inactive {
+  background-color: var(--ion-color-success);
+}

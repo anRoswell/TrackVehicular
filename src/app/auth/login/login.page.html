@@ -1,0 +1,68 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Iniciar Sesión</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-card class="ion-margin-top">
+    <ion-card-content>
+      <h2 class="ion-text-center ion-margin-bottom">TrackVehicular</h2>
+
+      @if (error) {
+        <ion-text color="danger" class="ion-display-block ion-margin-bottom">
+          <p>{{ error }}</p>
+        </ion-text>
+      }
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <ion-list>
+          <ion-item>
+            <ion-label position="stacked">Email</ion-label>
+            <ion-input 
+              type="email" 
+              formControlName="email"
+              [class.ion-invalid]="submitted && loginForm.get('email')?.invalid"
+            ></ion-input>
+          </ion-item>
+
+          @if (submitted && loginForm.get('email')?.invalid) {
+            <ion-text color="danger" class="ion-padding-start">
+              <p class="ion-no-margin">{{ getErrorEmail() }}</p>
+            </ion-text>
+          }
+
+          <ion-item>
+            <ion-label position="stacked">Contraseña</ion-label>
+            <ion-input 
+              type="password" 
+              formControlName="password"
+              [class.ion-invalid]="submitted && loginForm.get('password')?.invalid"
+            ></ion-input>
+          </ion-item>
+
+          @if (submitted && loginForm.get('password')?.invalid) {
+            <ion-text color="danger" class="ion-padding-start">
+              <p class="ion-no-margin">{{ getErrorPassword() }}</p>
+            </ion-text>
+          }
+        </ion-list>
+
+        <ion-button expand="block" type="submit" class="ion-margin-top">
+          Iniciar Sesión
+        </ion-button>
+      </form>
+
+      <div class="ion-text-center ion-margin-top">
+        <p>¿No tienes cuenta? 
+          <ion-button fill="clear" size="small" (click)="goToRegister()">
+            Regístrate aquí
+          </ion-button>
+        </p>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

@@ -22,10 +22,13 @@
     <div class="ion-padding">
       <h3>Estado pico y placa</h3>
       @if (inPicoPlaca) {
-        <p><strong>En pico y placa hoy</strong></p>
-      }
-      @if (!inPicoPlaca) {
-        <p>No aplica hoy</p>
+        <div class="pico-placa-status pico-placa-active">
+          <strong>En pico y placa hoy</strong>
+        </div>
+      } @else {
+        <div class="pico-placa-status pico-placa-inactive">
+          <strong>No aplica hoy</strong>
+        </div>
       }
 
       <h3>Documentos</h3>
@@ -39,6 +42,7 @@
             <p>No registrado</p>
           }
         </ion-label>
+        <ion-button slot="end" fill="outline" (click)="addSOAT()">Agregar</ion-button>
       </ion-item>
 
       <ion-item>
@@ -51,12 +55,49 @@
             <p>No registrado</p>
           }
         </ion-label>
+        <ion-button slot="end" fill="outline" (click)="addTecnomecanica()">Agregar</ion-button>
+      </ion-item>
+
+      <h3>Mantenimiento</h3>
+      <ion-item>
+        <ion-label>
+          <h4>Último cambio de aceite</h4>
+          @if (lastOilChange) {
+            <p>Fecha: {{ lastOilChange.date }} — Kilometraje: {{ lastOilChange.mileage }} km @if(lastOilChange.provider){ — Realizado por: {{ lastOilChange.provider }} }</p>
+          }
+          @if (!lastOilChange) {
+            <p>No registrado</p>
+          }
+        </ion-label>
+        <ion-button slot="end" fill="outline" (click)="addOilChange()">Agregar</ion-button>
       </ion-item>
 
       <div style="margin-top:1rem">
         <ion-button expand="block" (click)="close()">Cerrar</ion-button>
-        <ion-button expand="block" fill="outline">Ver más (historial de servicios)</ion-button>
+        <ion-button expand="block" fill="outline" (click)="toggleHistory()">{{ showHistory ? 'Ver menos' : 'Ver más (historial de servicios)' }}</ion-button>
       </div>
+
+      @if (showHistory) {
+        <h3>Historial de Documentos</h3>
+        @for (doc of allDocuments; track doc.id) {
+          <ion-item>
+            <ion-label>
+              <h4>{{ getDisplayType(doc.type) }}</h4>
+              <p>Emitido: {{ doc.issuedAt }} — Vence: {{ doc.expiresAt }} — Emisor: {{ doc.provider }}</p>
+            </ion-label>
+          </ion-item>
+        }
+
+        <h3>Historial de Mantenimiento</h3>
+        @for (maint of allMaintenances; track maint.id) {
+          <ion-item>
+            <ion-label>
+              <h4>{{ getDisplayType(maint.type) }}</h4>
+              <p>Fecha: {{ maint.date }} — Descripción: {{ maint.description }} @if (maint.mileage) { — Kilometraje: {{ maint.mileage }} km } @if (maint.provider) { — Realizado por: {{ maint.provider }} }</p>
+            </ion-label>
+          </ion-item>
+        }
+      }
     </div>
   </ion-content>
 }

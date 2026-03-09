@@ -28,17 +28,17 @@
 
   <ion-list>
     @for (vehicle of getVehicles(); track vehicle.id) {
-      <ion-item>
+      <ion-item (click)="editVehicle(vehicle)">
         <ion-icon slot="start" [name]="getVehicleIcon(vehicle.type)"></ion-icon>
         <ion-label>
           <h2>{{ vehicle.plate }}</h2>
           <p>{{ vehicle.type }}</p>
         </ion-label>
         <ion-buttons slot="end">
-          <ion-button (click)="editVehicle(vehicle)">
+          <ion-button (click)="editVehicle(vehicle); $event.stopPropagation()">
             <ion-icon name="create-outline"></ion-icon>
           </ion-button>
-          <ion-button color="danger" (click)="deleteVehicle(vehicle)">
+          <ion-button color="danger" (click)="deleteVehicle(vehicle); $event.stopPropagation()">
             <ion-icon name="trash-outline"></ion-icon>
           </ion-button>
         </ion-buttons>

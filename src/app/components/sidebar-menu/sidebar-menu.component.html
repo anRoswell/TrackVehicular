@@ -1,0 +1,148 @@
+<ion-split-pane contentId="main-content">
+  <!-- Sidebar Menu -->
+  <ion-menu contentId="main-content" type="overlay">
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-title>TrackVehicular</ion-title>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="ion-padding">
+      <!-- User Info -->
+      @if (user) {
+        <ion-list>
+          <ion-list-header>
+            <ion-label>
+              <h3>{{ user.name }}</h3>
+              @if (user.isAuthenticated) {
+                <p>{{ user.email }}</p>
+              }
+            </ion-label>
+          </ion-list-header>
+        </ion-list>
+      }
+
+      <!-- Menu Items - Always visible -->
+      <ion-list>
+        <ion-menu-toggle auto-hide="false">
+          <ion-item
+            button
+            detail="false"
+            routerLink="/home"
+            routerLinkActive="selected"
+          >
+            <ion-icon aria-hidden="true" slot="start" name="home"></ion-icon>
+            <ion-label>Inicio</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
+
+      <!-- Authenticated User Menu -->
+      @if (user?.isAuthenticated) {
+        <ion-list>
+          <ion-list-header>
+            <ion-label>Mi Cuenta</ion-label>
+          </ion-list-header>
+
+          <ion-menu-toggle auto-hide="false">
+            <ion-item button detail="false" routerLink="/profile" routerLinkActive="selected">
+              <ion-icon aria-hidden="true" slot="start" name="person-outline"></ion-icon>
+              <ion-label>Perfil</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-menu-toggle auto-hide="false">
+            <ion-item button detail="false" routerLink="/settings" routerLinkActive="selected">
+              <ion-icon aria-hidden="true" slot="start" name="settings-outline"></ion-icon>
+              <ion-label>Configuración</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+        </ion-list>
+      }
+
+      <!-- Company Staff Menu -->
+      @if (user?.isAuthenticated && isCompanyStaff()) {
+        <ion-list>
+          <ion-list-header>
+            <ion-label>Gestión Empresa</ion-label>
+          </ion-list-header>
+
+          <ion-menu-toggle auto-hide="false">
+            <ion-item button detail="false" routerLink="/company-dashboard" routerLinkActive="selected">
+              <ion-icon aria-hidden="true" slot="start" name="build-outline"></ion-icon>
+              <ion-label>Dashboard Empresa</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-menu-toggle auto-hide="false">
+            <ion-item button detail="false" routerLink="/maintenance-history" routerLinkActive="selected">
+              <ion-icon aria-hidden="true" slot="start" name="document-text-outline"></ion-icon>
+              <ion-label>Histórico Servicios</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+        </ion-list>
+      }
+
+      <!-- Admin Menu -->
+      @if (user?.isAuthenticated && isAdmin()) {
+        <ion-list>
+          <ion-list-header>
+            <ion-label>Administración</ion-label>
+          </ion-list-header>
+
+          <ion-menu-toggle auto-hide="false">
+            <ion-item button detail="false" routerLink="/admin-panel" routerLinkActive="selected">
+              <ion-icon aria-hidden="true" slot="start" name="build-outline"></ion-icon>
+              <ion-label>Panel Admin</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+        </ion-list>
+      }
+
+      <!-- About & Help -->
+      <ion-list>
+        <ion-list-header>
+          <ion-label>Ayuda</ion-label>
+        </ion-list-header>
+
+        <ion-menu-toggle auto-hide="false">
+          <ion-item button detail="false" routerLink="/about" routerLinkActive="selected">
+            <ion-icon aria-hidden="true" slot="start" name="information-circle-outline"></ion-icon>
+            <ion-label>Acerca de</ion-label>
+          </ion-item>
+        </ion-menu-toggle>
+      </ion-list>
+
+      <!-- Authentication Actions -->
+      <ion-list class="ion-margin-top">
+        @if (user?.isAuthenticated) {
+          <ion-button expand="block" color="danger" (click)="logout()">
+            <ion-icon slot="start" name="log-out-outline"></ion-icon>
+            Cerrar Sesión
+          </ion-button>
+        } @else {
+          <ion-button expand="block" color="primary" (click)="goToLogin()" class="ion-margin-bottom">
+            <ion-icon slot="start" name="log-in-outline"></ion-icon>
+            Iniciar Sesión
+          </ion-button>
+          <ion-button expand="block" fill="outline" (click)="goToRegister()">
+            Registrarse
+          </ion-button>
+        }
+      </ion-list>
+    </ion-content>
+  </ion-menu>
+
+  <!-- Main Content -->
+  <div id="main-content" class="ion-page">
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-menu-button></ion-menu-button>
+        </ion-buttons>
+        <ion-title>TrackVehicular</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-router-outlet></ion-router-outlet>
+  </div>
+</ion-split-pane>

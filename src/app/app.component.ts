@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
+import { IonApp } from '@ionic/angular/standalone';
 import { Capacitor } from '@capacitor/core';
 
 import { CapacitorPushService } from './services/capacitor-push.service';
+import { SidebarMenuComponent } from './components/sidebar-menu/sidebar-menu.component';
 
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
-  imports: [IonApp, IonRouterOutlet],
+  standalone: true,
+  imports: [IonApp, SidebarMenuComponent],
 })
 export class AppComponent implements OnInit {
   constructor(private pushService: CapacitorPushService) {}

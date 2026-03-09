@@ -11,8 +11,12 @@ export const routes: Routes = [
       import('./view-message/view-message.page').then((m) => m.ViewMessagePage),
   },
   {
+    path: 'login',
+    loadComponent: () => import('./auth/login/login.page').then(m => m.LoginPage),
+  },
+  {
     path: 'register',
-    loadComponent: () => import('./register/register.page').then(m => m.RegisterPage),
+    loadComponent: () => import('./auth/register/register.page').then(m => m.RegisterPage),
   },
   {
     path: '',
