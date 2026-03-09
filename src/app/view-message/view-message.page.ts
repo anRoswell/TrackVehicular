@@ -11,7 +11,7 @@ import { DataService, Message, Vehicle, VehicleDocument, VehicleMaintenance } fr
   templateUrl: './view-message.page.html',
   styleUrls: ['./view-message.page.scss'],
   standalone: true,
-  imports: [IonHeader, IonToolbar, IonButtons, IonBackButton, IonContent, IonItem, IonIcon, IonLabel, IonNote, IonButton, IonText],
+  imports: [IonHeader, IonToolbar, IonButtons, IonBackButton, IonContent, IonItem, IonIcon, IonLabel, IonNote, IonButton],
 })
 export class ViewMessagePage implements OnInit {
   @Input() vehicleId?: number;

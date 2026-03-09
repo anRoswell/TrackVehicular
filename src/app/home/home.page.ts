@@ -11,8 +11,7 @@ import { ModalController } from '@ionic/angular/standalone';
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
   standalone: true,
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonList, IonItem, IonLabel, IonButton, IonButtons, IonIcon,
-      IonFab, IonFabButton],
+  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonList, IonItem, IonLabel, IonButton, IonButtons, IonIcon, IonFab, IonFabButton],
 })
 export class HomePage {
   private data = inject(DataService);
