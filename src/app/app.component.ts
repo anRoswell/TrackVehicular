@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { IonApp } from '@ionic/angular/standalone';
 import { Capacitor } from '@capacitor/core';
+import { Platform } from '@ionic/angular';
 
 import { CapacitorPushService } from './services/capacitor-push.service';
 import { SidebarMenuComponent } from './components/sidebar-menu/sidebar-menu.component';
@@ -12,15 +13,17 @@ import { SidebarMenuComponent } from './components/sidebar-menu/sidebar-menu.com
   imports: [IonApp, SidebarMenuComponent],
 })
 export class AppComponent implements OnInit {
-  constructor(private pushService: CapacitorPushService) {}
+  constructor(private pushService: CapacitorPushService, private platform: Platform) {}
 
   ngOnInit(): void {
-    // Initialize push notifications only on mobile platforms (android / ios)
-    const platform = Capacitor.getPlatform();
-    if (platform === 'android' || platform === 'ios') {
-      this.pushService.init();
-    } else {
-      console.log('Push init skipped on platform:', platform);
-    }
+    this.platform.ready().then(() => {
+      // Initialize push notifications only on mobile platforms (android / ios)
+      const platform = Capacitor.getPlatform();
+      if (platform === 'android' || platform === 'ios') {
+        this.pushService.init();
+      } else {
+        console.log('Push init skipped on platform:', platform);
+      }
+    });
   }
 }

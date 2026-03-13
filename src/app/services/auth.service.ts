@@ -28,6 +28,8 @@ export class AuthService {
     this.loadUserFromStorage();
   }
 
+  
+
   getUser(): Observable<AuthUser> {
     return this.user$.asObservable();
   }

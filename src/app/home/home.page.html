@@ -1,8 +1,29 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-icon name="notifications-outline" class="ion-padding-start" style="font-size: 24px;"></ion-icon>
+    </ion-buttons>
+    
     <ion-title>
-      Mis Vehículos
+      <ion-select 
+        interface="popover" 
+        [value]="selectedVehicleId" 
+        (ionChange)="selectedVehicleId = $event.detail.value"
+        class="vehicle-selector"
+      >
+        @for (vehicle of getVehicles(); track vehicle.id) {
+          <ion-select-option [value]="vehicle.id">
+            {{ vehicle.plate }}
+          </ion-select-option>
+        }
+      </ion-select>
     </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="openAddVehicleModal()">
+        <ion-icon slot="icon-only" name="add"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -11,38 +32,158 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">
-        Mis Vehículos
-      </ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <!-- SECCIÓN 1: USUARIO -->
+  <div class="user-section ion-padding">
+    <ion-row class="ion-align-items-center">
+      <ion-col size="2">
+        <ion-avatar class="user-avatar">
+          <div class="avatar-placeholder">
+            <ion-icon name="person-circle-outline"></ion-icon>
+          </div>
+        </ion-avatar>
+      </ion-col>
+      <ion-col size="10" class="ion-padding-start">
+        <ion-text color="dark">
+          <h2 class="welcome-text">Hola, <strong>{{ user?.name || 'Conductor' }}</strong></h2>
+          <p class="subtitle-text">¿Qué vamos a gestionar hoy?</p>
+        </ion-text>
+      </ion-col>
+    </ion-row>
+  </div>
 
-  <!-- FAB para abrir modal de agregar vehículo -->
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button (click)="openAddVehicleModal()">
-      <ion-icon name="add"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
+  @if (selectedVehicle) {
+    <!-- SECCIÓN 2: SERVICIOS GRID -->
+    <div class="services-container ion-padding">
+      <h3 class="section-title">Servicios del vehículo</h3>
+      <ion-grid>
+        <ion-row>
+          <!-- SOAT -->
+          <ion-col size="4">
+            <div class="service-card" [class.alert]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt) === 'danger'">
+              <div class="icon-circle" [class.warning]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt) === 'warning'">
+                <ion-icon name="shield-checkmark-outline"></ion-icon>
+              </div>
+              <span class="service-label">SOAT</span>
+              <ion-badge [color]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt)">
+                {{ getDaysLeft(getLatestSOAT(selectedVehicle.id)?.expiresAt) }}
+              </ion-badge>
+            </div>
+          </ion-col>
 
-  <ion-list>
-    @for (vehicle of getVehicles(); track vehicle.id) {
-      <ion-item (click)="editVehicle(vehicle)">
-        <ion-icon slot="start" [name]="getVehicleIcon(vehicle.type)"></ion-icon>
-        <ion-label>
-          <h2>{{ vehicle.plate }}</h2>
-          <p>{{ vehicle.type }}</p>
-        </ion-label>
-        <ion-buttons slot="end">
-          <ion-button (click)="editVehicle(vehicle); $event.stopPropagation()">
-            <ion-icon name="create-outline"></ion-icon>
+          <!-- MULTAS -->
+          <ion-col size="4">
+            <div class="service-card">
+              <div class="icon-circle alert">
+                <ion-icon name="receipt-outline"></ion-icon>
+              </div>
+              <span class="service-label">Multas</span>
+              <ion-badge color="danger">2 Pend.</ion-badge>
+            </div>
+          </ion-col>
+
+          <!-- PICO Y PLACA -->
+          <ion-col size="4">
+            <div class="service-card">
+              <div class="icon-circle info">
+                <ion-icon name="calendar-outline"></ion-icon>
+              </div>
+              <span class="service-label">Pico y Placa</span>
+              <ion-badge color="primary">Viernes</ion-badge>
+            </div>
+          </ion-col>
+
+          <!-- CDA / TECNO -->
+          <ion-col size="4">
+            <div class="service-card">
+              <div class="icon-circle" [class.success]="getStatusColor(getLatestTecno(selectedVehicle.id)?.expiresAt) === 'success'">
+                <ion-icon name="construct-outline"></ion-icon>
+              </div>
+              <span class="service-label">CDA</span>
+              <ion-badge [color]="getStatusColor(getLatestTecno(selectedVehicle.id)?.expiresAt)">
+                {{ getDaysLeft(getLatestTecno(selectedVehicle.id)?.expiresAt) }}
+              </ion-badge>
+            </div>
+          </ion-col>
+
+          <!-- IMPUESTOS -->
+          <ion-col size="4">
+            <div class="service-card">
+              <div class="icon-circle warning">
+                <ion-icon name="receipt-outline"></ion-icon>
+              </div>
+              <span class="service-label">Impuestos</span>
+              <ion-badge color="warning">Abril 15</ion-badge>
+            </div>
+          </ion-col>
+
+          <!-- MÁS -->
+          <ion-col size="4">
+            <div class="service-card">
+              <div class="icon-circle more">
+                <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+              </div>
+              <span class="service-label">Ver más</span>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+
+    <!-- SECCIÓN 3: MARKETPLACE / COMPRAS -->
+    <div class="marketplace-section ion-padding">
+      <div class="marketplace-header">
+        <h3 class="section-title">Comprar servicios</h3>
+        <ion-text color="primary">
+          <p class="city-selector"><ion-icon name="location-outline"></ion-icon> Bogotá</p>
+        </ion-text>
+      </div>
+      
+      <ion-list lines="none">
+        <ion-item class="marketplace-item">
+          <ion-icon slot="start" name="shield-checkmark-outline" color="primary"></ion-icon>
+          <ion-label>
+            <h2>Renovar SOAT</h2>
+            <p>Recibe tu póliza en 5 minutos</p>
+          </ion-label>
+          <ion-button slot="end" fill="clear">
+            Comprar <ion-icon name="cart-outline" slot="end"></ion-icon>
           </ion-button>
-          <ion-button color="danger" (click)="deleteVehicle(vehicle); $event.stopPropagation()">
-            <ion-icon name="trash-outline"></ion-icon>
+        </ion-item>
+
+        <ion-item class="marketplace-item">
+          <ion-icon slot="start" name="construct-outline" color="secondary"></ion-icon>
+          <ion-label>
+            <h2>Cita Tecnomecánica</h2>
+            <p>Agenda en el CDA más cercano</p>
+          </ion-label>
+          <ion-button slot="end" fill="clear">
+            Agendar <ion-icon name="calendar-outline" slot="end"></ion-icon>
           </ion-button>
-        </ion-buttons>
-      </ion-item>
-    }
-  </ion-list>
+        </ion-item>
+      </ion-list>
+    </div>
+
+    <!-- RESUMEN TÉCNICO -->
+    <ion-card class="summary-card">
+      <ion-card-content>
+        <ion-row class="ion-align-items-center">
+          <ion-col size="2">
+            <ion-icon name="speedometer-outline" color="primary" style="font-size: 32px;"></ion-icon>
+          </ion-col>
+          <ion-col size="10">
+            <p class="mileage-label">Kilometraje actual</p>
+            <h2 class="mileage-value">50,230 km</h2>
+          </ion-col>
+        </ion-row>
+      </ion-card-content>
+    </ion-card>
+  } @else {
+    <div class="no-vehicle ion-padding ion-text-center">
+      <ion-icon name="warning-outline" size="large" color="medium"></ion-icon>
+      <h3>No tienes vehículos registrados</h3>
+      <p>Registra tu primer vehículo para empezar a gestionarlo.</p>
+      <ion-button (click)="openAddVehicleModal()">Agregar Vehículo</ion-button>
+    </div>
+  }
+
 </ion-content>

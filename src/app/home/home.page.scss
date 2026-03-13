@@ -1,0 +1,184 @@
+// Estilos de la cabecera y selector
+.vehicle-selector {
+  --background: transparent;
+  --placeholder-color: white;
+  --color: white;
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: 0.5px;
+  
+  &::part(container) {
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    padding: 2px 12px;
+  }
+}
+
+// Sección de Usuario
+.user-section {
+  background: linear-gradient(to bottom, var(--ion-color-primary) 0%, white 100%);
+  padding-bottom: 30px;
+
+  .user-avatar {
+    width: 50px;
+    height: 50px;
+    border: 2px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    background: var(--ion-color-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .avatar-placeholder {
+      font-size: 40px;
+      color: var(--ion-color-medium);
+    }
+  }
+
+  .welcome-text {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--ion-color-dark);
+  }
+
+  .subtitle-text {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--ion-color-step-600);
+  }
+}
+
+// Grid de Servicios
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--ion-color-dark);
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  padding: 16px 8px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+  height: 100%;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.alert {
+    background: #fff5f5;
+  }
+
+  .icon-circle {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f4ff;
+    color: var(--ion-color-primary);
+    font-size: 1.4rem;
+
+    &.warning { background: #fff9e6; color: #ffc409; }
+    &.alert { background: #fff5f5; color: #eb445a; }
+    &.info { background: #eefcfd; color: #3dc2ff; }
+    &.success { background: #f2fdf5; color: #2dd36f; }
+    &.more { background: #f4f5f8; color: #92949c; }
+  }
+
+  .service-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+    text-align: center;
+  }
+
+  ion-badge {
+    font-size: 0.6rem;
+    --padding-start: 6px;
+    --padding-end: 6px;
+  }
+}
+
+// Marketplace
+.marketplace-section {
+  background: #f9f9f9;
+  border-radius: 24px 24px 0 0;
+  margin-top: 10px;
+
+  .marketplace-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .city-selector {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .marketplace-item {
+    --background: white;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    
+    ion-icon {
+      font-size: 24px;
+    }
+
+    h2 {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    p {
+      font-size: 0.8rem;
+    }
+    
+    ion-button {
+      --color: var(--ion-color-primary);
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+  }
+}
+
+// Resumen Técnico
+.summary-card {
+  margin: 16px;
+  border-radius: 16px;
+  background: white;
+  border-left: 4px solid var(--ion-color-primary);
+
+  .mileage-label {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--ion-color-medium);
+  }
+  .mileage-value {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ion-color-dark);
+  }
+}
+
+.no-vehicle {
+  margin-top: 50px;
+  h3 { font-weight: 700; }
+  p { color: var(--ion-color-medium); }
+  ion-button { margin-top: 20px; }
+}
