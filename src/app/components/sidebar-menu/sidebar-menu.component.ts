@@ -14,8 +14,6 @@ import {
   IonIcon,
   IonLabel,
   IonButton,
-  IonMenuButton,
-  IonButtons,
   IonRouterOutlet
 } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
@@ -55,8 +53,6 @@ import { AuthService, AuthUser } from 'src/app/services/auth.service';
     IonIcon,
     IonLabel,
     IonButton,
-    IonMenuButton,
-    IonButtons,
     IonRouterOutlet
   ]
 })

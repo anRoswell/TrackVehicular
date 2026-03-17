@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Platform, IonHeader, IonToolbar, IonButtons, IonBackButton, IonContent, IonItem, IonIcon, IonLabel, IonNote, ModalController, IonButton, IonText } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { personCircle } from 'ionicons/icons';
-import { DataService, Message, Vehicle, VehicleDocument, VehicleMaintenance } from '../services/data.service';
+import { DataService, Vehicle, VehicleDocument, VehicleMaintenance } from '../services/data.service';
 
 @Component({
   selector: 'app-view-message',
@@ -14,7 +14,7 @@ import { DataService, Message, Vehicle, VehicleDocument, VehicleMaintenance } fr
   imports: [IonHeader, IonToolbar, IonButtons, IonBackButton, IonContent, IonItem, IonIcon, IonLabel, IonNote, IonButton],
 })
 export class ViewMessagePage implements OnInit {
-  @Input() vehicleId?: number;
+  @Input() vehicleId?: string;
   public vehicle?: Vehicle;
   public soat?: VehicleDocument;
   public tecnomecanica?: VehicleDocument;
@@ -23,7 +23,7 @@ export class ViewMessagePage implements OnInit {
   public showHistory = false;
   public allMaintenances: VehicleMaintenance[] = [];
   public allDocuments: VehicleDocument[] = [];
-  public message!: Message;
+  public message!: any;
   private data = inject(DataService);
   private activatedRoute = inject(ActivatedRoute);
   private platform = inject(Platform);
@@ -34,9 +34,8 @@ export class ViewMessagePage implements OnInit {
   }
 
   ngOnInit() {
-    // If opened as modal with vehicleId, show vehicle info
-    if (this.vehicleId !== undefined && this.vehicleId !== null) {
-      this.vehicle = this.data.getVehicleById(this.vehicleId as number);
+    if (this.vehicleId) {
+      this.vehicle = this.data.getVehicleById(this.vehicleId);
       if (this.vehicle) {
         this.soat = this.data.getLatestDocumentByType(this.vehicle.id, 'SOAT');
         this.tecnomecanica = this.data.getLatestDocumentByType(this.vehicle.id, 'TECNOMECANICA');
@@ -45,11 +44,7 @@ export class ViewMessagePage implements OnInit {
         this.allDocuments = this.data.getVehicleDocuments(this.vehicle.id);
         this.inPicoPlaca = this.checkPicoPlaca(this.vehicle.plate);
       }
-      return;
     }
-
-    const id = this.activatedRoute.snapshot.paramMap.get('id') as string;
-    this.message = this.data.getMessageById(parseInt(id, 10));
   }
 
   close() {
@@ -64,7 +59,7 @@ export class ViewMessagePage implements OnInit {
     if (mileage && !isNaN(parseInt(mileage, 10))) {
       const provider = prompt('¿Quién realizó el cambio de aceite? (Opcional)');
       const newMaintenance: VehicleMaintenance = {
-        id: 0, // will be set in service
+        id: 'temp-' + Date.now(),
         vehicleId: this.vehicle.id,
         type: 'OIL_CHANGE',
         date: date,
@@ -73,7 +68,6 @@ export class ViewMessagePage implements OnInit {
         provider: provider ? provider : undefined
       };
       this.data.addVehicleMaintenance(newMaintenance);
-      // Refresh the last oil change
       this.lastOilChange = this.data.getLatestMaintenanceByType(this.vehicle.id, 'OIL_CHANGE');
       this.allMaintenances = this.data.getVehicleMaintenances(this.vehicle.id);
     }
@@ -83,7 +77,8 @@ export class ViewMessagePage implements OnInit {
     this.showHistory = !this.showHistory;
   }
 
-  getDisplayType(type: string): string {
+  getDisplayType(type: string | undefined): string {
+    if (!type) return 'Desconocido';
     const map: { [key: string]: string } = {
       'SOAT': 'SOAT',
       'TECNOMECANICA': 'Tecno-mecánica',
@@ -101,7 +96,7 @@ export class ViewMessagePage implements OnInit {
     const provider = prompt('Ingrese el emisor del SOAT:');
     if (expiresAt && provider) {
       const newDoc: VehicleDocument = {
-        id: 0,
+        id: 'temp-' + Date.now(),
         vehicleId: this.vehicle.id,
         type: 'SOAT',
         issuedAt: new Date().toISOString().split('T')[0],
@@ -120,7 +115,7 @@ export class ViewMessagePage implements OnInit {
     const provider = prompt('Ingrese el emisor de la Tecno-mecánica:');
     if (expiresAt && provider) {
       const newDoc: VehicleDocument = {
-        id: 0,
+        id: 'temp-' + Date.now(),
         vehicleId: this.vehicle.id,
         type: 'TECNOMECANICA',
         issuedAt: new Date().toISOString().split('T')[0],
@@ -134,16 +129,14 @@ export class ViewMessagePage implements OnInit {
   }
 
   private checkPicoPlaca(plate: string): boolean {
-    // Demo rule: pico y placa true if last digit parity matches weekday parity
     const last = plate.replace(/[^0-9]/g, '').slice(-1);
     if (!last) return false;
     const digit = parseInt(last, 10);
-    const day = new Date().getDay(); // 0 Sun .. 6 Sat
+    const day = new Date().getDay(); 
     return (digit % 2) === (day % 2);
   }
 
   getBackButtonText() {
-    const isIos = this.platform.is('ios')
-    return isIos ? 'Inbox' : '';
+    return this.platform.is('ios') ? 'Atrás' : '';
   }
 }

@@ -1,22 +1,29 @@
-<ion-header [translucent]="true" class="ion-no-border">
+<ion-header class="ion-no-border">
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-icon name="notifications-outline" class="ion-padding-start" style="font-size: 24px;"></ion-icon>
+      <ion-menu-button color="light"></ion-menu-button>
     </ion-buttons>
     
     <ion-title>
-      <ion-select 
-        interface="popover" 
-        [value]="selectedVehicleId" 
-        (ionChange)="selectedVehicleId = $event.detail.value"
-        class="vehicle-selector"
-      >
-        @for (vehicle of getVehicles(); track vehicle.id) {
-          <ion-select-option [value]="vehicle.id">
-            {{ vehicle.plate }}
-          </ion-select-option>
+      <div class="header-center-content" style="display: flex; align-items: center; justify-content: center;">
+        @if (selectedVehicle) {
+          <ion-icon [name]="getVehicleIcon(selectedVehicle.type)" style="margin-right: 8px; font-size: 1.2em;"></ion-icon>
         }
-      </ion-select>
+        <ion-select 
+          interface="popover" 
+          [value]="selectedVehicleId" 
+          (ionChange)="onVehicleChange($event)"
+          class="vehicle-selector"
+          toggle-icon="chevron-down-outline"
+          aria-label="Seleccionar vehículo"
+        >
+          @for (vehicle of getVehicles(); track vehicle.id) {
+            <ion-select-option [value]="vehicle.id">
+              {{ vehicle.plate }}
+            </ion-select-option>
+          }
+        </ion-select>
+      </div>
     </ion-title>
 
     <ion-buttons slot="end">
@@ -54,12 +61,60 @@
   @if (selectedVehicle) {
     <!-- SECCIÓN 2: SERVICIOS GRID -->
     <div class="services-container ion-padding">
-      <h3 class="section-title">Servicios del vehículo</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="section-title">Servicios del vehículo</h3>
+        <ion-button size="small" fill="outline" (click)="consultSIMIT()" [disabled]="isConsultingSIMIT">
+          @if (isConsultingSIMIT) {
+            Consultando...
+          } @else {
+            Consultar SIMIT <ion-icon slot="end" name="search-outline"></ion-icon>
+          }
+        </ion-button>
+      </div>
+
+      @if (mockFCMData) {
+        <ion-card color="light" class="simit-info-card">
+          <ion-card-header>
+            <ion-card-subtitle>Información consolidada (MOCK SIMIT/FCM)</ion-card-subtitle>
+            <ion-card-title>{{ mockFCMData.vehicle.plate }} - {{ mockFCMData.vehicle.brand }} {{ mockFCMData.vehicle.line }}</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-list lines="none" style="background: transparent;">
+              <ion-item style="--background: transparent;">
+                <ion-icon slot="start" name="shield-checkmark-outline" [color]="mockFCMData.insurance.status === 'VIGENTE' ? 'success' : 'danger'"></ion-icon>
+                <ion-label>
+                  <h2>SOAT: {{ mockFCMData.insurance.status }}</h2>
+                  <p>Vence: {{ mockFCMData.insurance.expiryDate }} ({{ mockFCMData.insurance.company }})</p>
+                </ion-label>
+              </ion-item>
+              <ion-item style="--background: transparent;">
+                <ion-icon slot="start" name="construct-outline" [color]="mockFCMData.technicalReview.status === 'VIGENTE' ? 'success' : 'danger'"></ion-icon>
+                <ion-label>
+                  <h2>Tecnomecánica: {{ mockFCMData.technicalReview.status }}</h2>
+                  <p>Vence: {{ mockFCMData.technicalReview.expiryDate }}</p>
+                </ion-label>
+              </ion-item>
+              <ion-item style="--background: transparent;">
+                <ion-icon slot="start" name="receipt-outline" [color]="mockFCMData.summary.totalFines > 0 ? 'danger' : 'success'"></ion-icon>
+                <ion-label>
+                  <h2>Multas: {{ mockFCMData.summary.totalFines }} pendientes</h2>
+                  @if (mockFCMData.summary.totalFines > 0) {
+                    <p style="color: var(--ion-color-danger); font-weight: bold;">Total: ${{ mockFCMData.summary.totalAmount.toLocaleString() }} {{ mockFCMData.summary.currency }}</p>
+                  } @else {
+                    <p>No se encontraron multas en el sistema.</p>
+                  }
+                </ion-label>
+              </ion-item>
+            </ion-list>
+          </ion-card-content>
+        </ion-card>
+      }
+
       <ion-grid>
         <ion-row>
           <!-- SOAT -->
           <ion-col size="4">
-            <div class="service-card" [class.alert]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt) === 'danger'">
+            <div class="service-card" (click)="openSoatModal()" [class.alert]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt) === 'danger'">
               <div class="icon-circle" [class.warning]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt) === 'warning'">
                 <ion-icon name="shield-checkmark-outline"></ion-icon>
               </div>
@@ -72,29 +127,33 @@
 
           <!-- MULTAS -->
           <ion-col size="4">
-            <div class="service-card">
+            <div class="service-card" (click)="openFinesModal()">
               <div class="icon-circle alert">
                 <ion-icon name="receipt-outline"></ion-icon>
               </div>
               <span class="service-label">Multas</span>
-              <ion-badge color="danger">2 Pend.</ion-badge>
+              <ion-badge color="danger">
+                {{ (data.fines$ | async)?.length || 0 }} Pend.
+              </ion-badge>
             </div>
           </ion-col>
 
-          <!-- PICO Y PLACA -->
+          <!-- PICO Y PLACA (Dinámico) -->
           <ion-col size="4">
-            <div class="service-card">
-              <div class="icon-circle info">
+            <div class="service-card" (click)="openPicoYPlacaModal()" [class.alert]="getPicoYPlacaInfo(selectedVehicle.plate).status === 'Restringido'">
+              <div class="icon-circle" [class.success]="getPicoYPlacaInfo(selectedVehicle.plate).status === 'Libre' || getPicoYPlacaInfo(selectedVehicle.plate).status === 'Puedes circular'">
                 <ion-icon name="calendar-outline"></ion-icon>
               </div>
               <span class="service-label">Pico y Placa</span>
-              <ion-badge color="primary">Viernes</ion-badge>
+              <ion-badge [color]="getPicoYPlacaInfo(selectedVehicle.plate).color">
+                {{ getPicoYPlacaInfo(selectedVehicle.plate).status }}
+              </ion-badge>
             </div>
           </ion-col>
 
           <!-- CDA / TECNO -->
           <ion-col size="4">
-            <div class="service-card">
+            <div class="service-card" (click)="openTecnoModal()">
               <div class="icon-circle" [class.success]="getStatusColor(getLatestTecno(selectedVehicle.id)?.expiresAt) === 'success'">
                 <ion-icon name="construct-outline"></ion-icon>
               </div>
@@ -107,7 +166,7 @@
 
           <!-- IMPUESTOS -->
           <ion-col size="4">
-            <div class="service-card">
+            <div class="service-card" (click)="openTaxesModal()">
               <div class="icon-circle warning">
                 <ion-icon name="receipt-outline"></ion-icon>
               </div>
@@ -134,7 +193,7 @@
       <div class="marketplace-header">
         <h3 class="section-title">Comprar servicios</h3>
         <ion-text color="primary">
-          <p class="city-selector"><ion-icon name="location-outline"></ion-icon> Bogotá</p>
+          <p class="city-selector"><ion-icon name="location-outline"></ion-icon> Cartagena</p>
         </ion-text>
       </div>
       
@@ -156,7 +215,7 @@
             <h2>Cita Tecnomecánica</h2>
             <p>Agenda en el CDA más cercano</p>
           </ion-label>
-          <ion-button slot="end" fill="clear">
+          <ion-button slot="end" fill="clear" (click)="openCdaMapModal()">
             Agendar <ion-icon name="calendar-outline" slot="end"></ion-icon>
           </ion-button>
         </ion-item>
