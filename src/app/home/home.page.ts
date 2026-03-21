@@ -502,6 +502,12 @@ export class HomePage implements OnInit {
       }
     });
     await modal.present();
+
+    const { data } = await modal.onWillDismiss();
+    if (data?.action === 'save') {
+      console.log('Fechas del Kit actualizadas:', data.items);
+      // Aquí llamarías al servicio para persistir los cambios
+    }
   }
 
   async openCdaMapModal() {

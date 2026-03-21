@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { 
   IonContent, 
   IonHeader, 
@@ -7,127 +8,212 @@ import {
   IonToolbar, 
   IonButtons, 
   IonButton, 
-  IonIcon,
-  IonList,
-  IonItem,
-  IonLabel,
-  IonNote,
-  IonAccordion,
-  IonAccordionGroup,
-  IonBadge,
+  IonIcon, 
+  IonList, 
+  IonItem, 
+  IonLabel, 
+  IonDatetime, 
+  IonDatetimeButton, 
+  IonModal,
+  IonFooter,
+  IonText,
+  IonListHeader,
+  IonCheckbox,
   ModalController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   closeOutline, 
-  calendarOutline, 
-  checkmarkCircle, 
-  alertCircle, 
-  timeOutline,
+  saveOutline, 
+  alertCircleOutline, 
+  checkmarkCircleOutline,
   medkitOutline,
+  flameOutline,
   constructOutline,
+  buildOutline,
+  gitCompareOutline,
   warningOutline,
-  flashlightOutline,
-  carOutline,
-  helpCircleOutline
+  squareOutline,
+  briefcaseOutline,
+  discOutline,
+  flashlightOutline
 } from 'ionicons/icons';
-
-interface KitItem {
-  name: string;
-  required: boolean;
-  hasExpiry: boolean;
-  expiryDate?: string;
-  status: 'valid' | 'expired' | 'missing' | 'warning';
-  icon: string;
-}
-
-interface KitHistory {
-  date: string;
-  notes: string;
-  status: string;
-}
 
 @Component({
   selector: 'app-road-kit-modal',
-  templateUrl: './road-kit-modal.component.html',
-  styleUrls: ['./road-kit-modal.component.scss'],
   standalone: true,
   imports: [
     CommonModule, 
+    FormsModule, 
     IonContent, 
     IonHeader, 
     IonTitle, 
     IonToolbar, 
     IonButtons, 
     IonButton, 
-    IonIcon,
-    IonList,
-    IonItem,
-    IonLabel,
-    IonNote,
-    IonAccordion,
-    IonAccordionGroup,
-    IonBadge
-  ]
+    IonIcon, 
+    IonList, 
+    IonItem, 
+    IonLabel, 
+    IonDatetime,
+    IonDatetimeButton,
+    IonModal,
+    IonFooter,
+    IonText,
+    IonListHeader,
+    IonCheckbox
+  ],
+  template: `
+    <ion-header [translucent]="true">
+      <ion-toolbar>
+        <ion-title>Kit de Carretera</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="close()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content [fullscreen]="true" class="ion-padding">
+      
+      <ion-list inset="true">
+        <ion-list-header>
+          <ion-label>Elementos del Kit</ion-label>
+        </ion-list-header>
+
+        <!-- Checklist estándar -->
+        <ion-item *ngFor="let item of checklist">
+          <ion-icon [name]="item.icon" slot="start" [color]="item.checked ? 'success' : 'danger'"></ion-icon>
+          <ion-label>{{ item.name }}</ion-label>
+          <ion-checkbox slot="end" [(ngModel)]="item.checked" color="success"></ion-checkbox>
+        </ion-item>
+
+        <!-- Extintor -->
+        <ion-item>
+          <div slot="start" class="item-icon-wrapper red">
+            <ion-icon name="flame-outline"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>Extintor</h2>
+            <p>
+              <ion-text [color]="isValid(items.extinguisher) ? 'success' : 'danger'">
+                {{ isValid(items.extinguisher) ? 'Vigente' : 'Vencido' }}
+              </ion-text>
+            </p>
+          </ion-label>
+          <ion-datetime-button datetime="extinguisherDate"></ion-datetime-button>
+          
+          <ion-modal [keepContentsMounted]="true">
+            <ng-template>
+              <ion-datetime 
+                id="extinguisherDate" 
+                presentation="date" 
+                [(ngModel)]="items.extinguisher"
+                [showDefaultButtons]="true"
+                doneText="Confirmar"
+                cancelText="Cancelar"
+              ></ion-datetime>
+            </ng-template>
+          </ion-modal>
+        </ion-item>
+
+        <!-- Botiquín -->
+        <ion-item>
+          <div slot="start" class="item-icon-wrapper blue">
+            <ion-icon name="medkit-outline"></ion-icon>
+          </div>
+          <ion-label>
+            <h2>Botiquín</h2>
+            <p>
+              <ion-text [color]="isValid(items.firstAid) ? 'success' : 'danger'">
+                {{ isValid(items.firstAid) ? 'Vigente' : 'Vencido' }}
+              </ion-text>
+            </p>
+          </ion-label>
+          <ion-datetime-button datetime="kitDate"></ion-datetime-button>
+          
+          <ion-modal [keepContentsMounted]="true">
+            <ng-template>
+              <ion-datetime 
+                id="kitDate" 
+                presentation="date" 
+                [(ngModel)]="items.firstAid"
+                [showDefaultButtons]="true"
+                doneText="Confirmar"
+                cancelText="Cancelar"
+              ></ion-datetime>
+            </ng-template>
+          </ion-modal>
+        </ion-item>
+      </ion-list>
+
+    </ion-content>
+
+    <ion-footer>
+      <ion-toolbar>
+        <ion-button expand="block" class="ion-margin" (click)="save()">
+          <ion-icon slot="start" name="save-outline"></ion-icon>
+          Guardar
+        </ion-button>
+      </ion-toolbar>
+    </ion-footer>
+  `,
+  styles: [`
+    .item-icon-wrapper { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px; }
+    .item-icon-wrapper.red { background-color: rgba(var(--ion-color-danger-rgb), 0.1); color: var(--ion-color-danger); }
+    .item-icon-wrapper.blue { background-color: rgba(var(--ion-color-primary-rgb), 0.1); color: var(--ion-color-primary); }
+    .item-icon-wrapper ion-icon { font-size: 20px; }
+  `]
 })
 export class RoadKitModalComponent implements OnInit {
+  @Input() vehiclePlate: string = '';
   private modalCtrl = inject(ModalController);
 
-  @Input() vehiclePlate: string = '';
+  checklist: { name: string, checked: boolean, icon: string }[] = [
+    { name: 'Gato hidráulico', checked: true, icon: 'build-outline' },
+    { name: 'Cruceta', checked: true, icon: 'git-compare-outline' },
+    { name: '2 Señales de carretera', checked: true, icon: 'warning-outline' },
+    { name: '2 Tacos para bloquear', checked: true, icon: 'square-outline' },
+    { name: 'Caja de herramientas', checked: true, icon: 'briefcase-outline' },
+    { name: 'Llanta de repuesto', checked: true, icon: 'disc-outline' },
+    { name: 'Linterna', checked: true, icon: 'flashlight-outline' },
+  ];
 
-  items: KitItem[] = [];
-  history: KitHistory[] = [];
+  items = {
+    extinguisher: '',
+    firstAid: ''
+  };
 
   constructor() {
-    addIcons({ 
-      closeOutline, 
-      calendarOutline, 
-      checkmarkCircle, 
-      alertCircle, 
-      timeOutline,
-      medkitOutline,
-      constructOutline,
-      warningOutline,
-      flashlightOutline,
-      carOutline,
-      helpCircleOutline
-    });
+    addIcons({ closeOutline, saveOutline, alertCircleOutline, checkmarkCircleOutline, medkitOutline, flameOutline, constructOutline, buildOutline, gitCompareOutline, warningOutline, squareOutline, briefcaseOutline, discOutline, flashlightOutline });
   }
 
   ngOnInit() {
-    this.loadData();
+    // Simulamos cargar datos existentes (vigencia de 1 año desde hoy)
+    const today = new Date();
+    const nextYear = new Date(today.setFullYear(today.getFullYear() + 1));
+    
+    this.items = {
+      extinguisher: nextYear.toISOString(),
+      firstAid: nextYear.toISOString()
+    };
   }
 
-  loadData() {
-    // Datos simulados para el kit de carretera
-    this.items = [
-      { name: 'Extintor (10 lbs)', required: true, hasExpiry: true, expiryDate: '2024-12-31', status: 'valid', icon: 'alert-circle' },
-      { name: 'Botiquín Primeros Auxilios', required: true, hasExpiry: true, expiryDate: '2024-06-15', status: 'warning', icon: 'medkit-outline' },
-      { name: 'Herramienta Básica', required: true, hasExpiry: false, status: 'valid', icon: 'construct-outline' },
-      { name: 'Señales de Carretera (Conos/Triángulos)', required: true, hasExpiry: false, status: 'valid', icon: 'warning-outline' },
-      { name: 'Llanta de Repuesto', required: true, hasExpiry: false, status: 'valid', icon: 'car-outline' },
-      { name: 'Linterna', required: true, hasExpiry: false, status: 'missing', icon: 'flashlight-outline' },
-      { name: 'Gato y Cruceta', required: true, hasExpiry: false, status: 'valid', icon: 'construct-outline' },
-    ];
-
-    this.history = [
-      { date: '2023-01-10', notes: 'Recarga de extintor anual', status: 'Completado' },
-      { date: '2023-06-20', notes: 'Revisión general pre-viaje', status: 'Completado' },
-      { date: '2022-12-05', notes: 'Compra de nuevo botiquín', status: 'Completado' },
-    ];
-  }
-
-  dismiss() {
+  close() {
     this.modalCtrl.dismiss();
   }
 
-  getStatusColor(status: string) {
-    switch(status) {
-      case 'valid': return 'success';
-      case 'expired': return 'danger';
-      case 'warning': return 'warning';
-      case 'missing': return 'medium';
-      default: return 'medium';
-    }
+  save() {
+    this.modalCtrl.dismiss({ action: 'save', items: this.items });
+  }
+
+  isValid(dateStr: string): boolean {
+    if (!dateStr) return false;
+    const date = new Date(dateStr);
+    const now = new Date();
+    now.setHours(0,0,0,0); // Ignorar hora para la comparación
+    date.setHours(0,0,0,0);
+    return date >= now;
   }
 }
