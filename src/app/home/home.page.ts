@@ -78,6 +78,8 @@ export class HomePage implements OnInit {
   public mockFCMData: any = null;
   public isConsultingSIMIT = false;
   public showMoreServices = false;
+  private roadKitsData = new Map<string, any>();
+  private maintenanceData = new Map<string, { history: any[] }>();
   
   constructor() {
     addIcons({
@@ -328,10 +330,12 @@ export class HomePage implements OnInit {
             component: FinesModalComponent,
             componentProps: {
                 fines: fines,
-                summary: summary
+                summary: summary,
+                helpText: 'Las multas o comparendos son sanciones por infracciones al Código Nacional de Tránsito. Debes estar a paz y salvo para realizar trámites.'
             },
             breakpoints: [0, 0.75, 0.9],
-            initialBreakpoint: 0.9
+            initialBreakpoint: 0.9,
+            cssClass: 'ion-page'
         });
 
         await modal.present();
@@ -376,10 +380,14 @@ export class HomePage implements OnInit {
         showDownload: true,
         downloadLabel: 'Descargar SOAT',
         adText: '¡Evita multas y protege tu vida! Renueva tu SOAT con 5% de descuento exclusivo en nuestra red aliada.',
-        actionLabel: statusInfo.color === 'success' ? 'Comprar Nuevo' : 'Renovar Ahora'
+        actionLabel: statusInfo.color === 'success' ? 'Comprar Nuevo' : 'Renovar Ahora',
+        helpText: 'El SOAT (Seguro Obligatorio de Accidentes de Tránsito) cubre los daños corporales causados a las personas en accidentes. Es obligatorio para todos los vehículos.',
+        progressStartLabel: latest?.issuedAt ? new Date(latest.issuedAt).toLocaleDateString() : 'Inicio',
+        progressEndLabel: latest?.expiresAt ? new Date(latest.expiresAt).toLocaleDateString() : 'Vence'
       },
       breakpoints: [0, 0.75, 0.9],
-      initialBreakpoint: 0.9
+      initialBreakpoint: 0.9,
+      cssClass: 'ion-page'
     });
 
     await modal.present();
@@ -422,7 +430,10 @@ export class HomePage implements OnInit {
         progress: progress,
         showDownload: false, // Usually tecno is a certificate, could be true if needed
         adText: '¿Ya realizaste tu revisión? Agenda en CDA La Heroica y recibe un lavado de motor GRATIS por tu inspección.',
-        actionLabel: 'Agendar en CDA'
+        actionLabel: 'Agendar en CDA',
+        helpText: 'La Revisión Técnico Mecánica certifica que el vehículo cumple con las condiciones mecánicas, ambientales y de seguridad para circular. Es obligatoria anualmente.',
+        progressStartLabel: latest?.issuedAt ? new Date(latest.issuedAt).toLocaleDateString() : 'Emisión',
+        progressEndLabel: latest?.expiresAt ? new Date(latest.expiresAt).toLocaleDateString() : 'Vence'
       },
       breakpoints: [0, 0.75, 0.9],
       initialBreakpoint: 0.75
@@ -465,6 +476,24 @@ export class HomePage implements OnInit {
     const alert = await this.alert.create({
       header: 'Pico y Placa - Cartagena',
       message: message,
+      buttons: [
+        {
+          text: 'Ayuda',
+          handler: () => {
+            this.showPicoPlacaHelp();
+            return false;
+          }
+        },
+        'OK'
+      ]
+    });
+    await alert.present();
+  }
+
+  async showPicoPlacaHelp() {
+    const alert = await this.alert.create({
+      header: '¿Cómo funciona?',
+      message: 'El sistema verifica automáticamente el último dígito de tu placa y el día de la semana para indicarte si tienes restricción de movilidad en Cartagena.',
       buttons: ['OK']
     });
     await alert.present();
@@ -493,21 +522,188 @@ export class HomePage implements OnInit {
 
   async openRoadKitModal() {
     const { RoadKitModalComponent } = await import('../modals/road-kit/road-kit-modal.component');
+    const currentKitData = this.selectedVehicleId ? this.roadKitsData.get(this.selectedVehicleId) : null;
+
     const modal = await this.modal.create({
       component: RoadKitModalComponent,
       breakpoints: [0, 1], // Full screen o custom sheet
       initialBreakpoint: 1,
       componentProps: { 
-        vehiclePlate: this.selectedVehicle?.plate || ''
+        vehiclePlate: this.selectedVehicle?.plate || '',
+        kitData: currentKitData
       }
     });
     await modal.present();
 
     const { data } = await modal.onWillDismiss();
-    if (data?.action === 'save') {
-      console.log('Fechas del Kit actualizadas:', data.items);
-      // Aquí llamarías al servicio para persistir los cambios
+    if (data?.action === 'save' && data.kitData && this.selectedVehicleId) {
+      // Aquí se guardarían los datos en el DataService, por ahora lo manejamos en la memoria del componente.
+      this.roadKitsData.set(this.selectedVehicleId, data.kitData);
     }
+  }
+
+  get roadKitInfo(): { text: string, color: string } {
+    if (!this.selectedVehicleId) {
+      return { text: 'N/A', color: 'medium' };
+    }
+
+    const kitData = this.roadKitsData.get(this.selectedVehicleId);
+
+    if (!kitData) {
+      // Estado por defecto si aún no se ha interactuado con el modal
+      return { text: 'Revisar', color: 'warning' };
+    }
+
+    const isDateValid = (dateStr: string): boolean => {
+      if (!dateStr) return false;
+      const date = new Date(dateStr);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      date.setHours(0,0,0,0);
+      return date >= now;
+    };
+
+    if (!isDateValid(kitData.items.extinguisher) || !isDateValid(kitData.items.firstAid)) {
+      return { text: 'Vencido', color: 'danger' };
+    }
+
+    const allItemsChecked = kitData.checklist.every((item: { checked: boolean; }) => item.checked);
+    if (!allItemsChecked) {
+      return { text: 'Incompleto', color: 'warning' };
+    }
+
+    return { text: 'Completo', color: 'success' };
+    }
+
+  async openMaintenanceModal(type: 'Aceite' | 'Alineación' | 'Sincronización') {
+    if (!this.selectedVehicleId) return;
+    const vehicle = this.selectedVehicle;
+
+    const iconMap = {
+        'Aceite': 'water-outline',
+        'Alineación': 'options-outline',
+        'Sincronización': 'sync-outline'
+    };
+    const adTextMap = {
+        'Aceite': 'Un cambio de aceite a tiempo protege tu motor. ¡Encuentra los mejores lubricantes y filtros aquí!',
+        'Alineación': 'Una correcta alineación y balanceo mejora la seguridad y la vida de tus llantas. Agenda tu servicio.',
+        'Sincronización': 'Recupera la potencia y eficiencia de tu motor. Expertos en sincronización a tu servicio.'
+    };
+    const helpTextMap = {
+        'Aceite': 'El aceite lubrica el motor reduciendo el desgaste. Se debe cambiar periódicamente según el kilometraje o tiempo recomendado.',
+        'Alineación': 'Ajuste de la geometría de la dirección y suspensión. Evita el desgaste irregular de las llantas y mejora la estabilidad.',
+        'Sincronización': 'Mantenimiento del sistema de admisión y combustión para asegurar la eficiencia del combustible y reducir emisiones.'
+    };
+
+    const key = `${this.selectedVehicleId}-${type}`;
+    const serviceData = this.maintenanceData.get(key) || { history: [] };
+    const latest = serviceData.history.length > 0 ? serviceData.history[0] : null;
+    
+    const intervalMonths = type === 'Alineación' ? 12 : 6;
+    const nextDueDate = latest ? new Date(new Date(latest.date).setMonth(new Date(latest.date).getMonth() + intervalMonths)) : new Date();
+    
+    const statusInfo = this.getStatusInfo(nextDueDate.toISOString());
+    const daysLeft = this.getDaysLeft(nextDueDate.toISOString());
+    const progress = this.calculateProgress(latest?.date, nextDueDate.toISOString());
+
+    const { ServiceDetailComponent } = await import('../modals/service-detail/service-detail.component');
+    const modal = await this.modal.create({
+      component: ServiceDetailComponent,
+      componentProps: {
+        title: `Mantenimiento de ${type}`,
+        icon: iconMap[type],
+        plate: vehicle?.plate || '',
+        policyNumber: 'N/A',
+        history: serviceData.history,
+        status: statusInfo.label,
+        statusColor: statusInfo.color,
+        progressBarColor: statusInfo.color,
+        daysRemaining: daysLeft === 'Vencido' ? 'Mantenimiento requerido' : `Próximo en ${daysLeft}`,
+        nextDate: nextDueDate.toISOString(),
+        lastDate: latest?.date || 'N/A',
+        lastProvider: latest?.provider || 'Taller no registrado',
+        progress: progress,
+        showDownload: false,
+        adText: adTextMap[type],
+        actionLabel: 'Registrar Nuevo',
+        helpText: helpTextMap[type],
+        progressStartLabel: latest?.date ? new Date(latest.date).toLocaleDateString() : 'Último cambio',
+        progressEndLabel: nextDueDate.toLocaleDateString()
+      },
+      breakpoints: [0, 0.75, 0.9],
+      initialBreakpoint: 0.9,
+      cssClass: 'ion-page'
+    });
+
+    await modal.present();
+
+    const { data } = await modal.onWillDismiss();
+    if (data?.action) {
+      this.promptAddMaintenanceRecord(type);
+    }
+  }
+
+  async promptAddMaintenanceRecord(type: string) {
+      const alert = await this.alert.create({
+          header: `Registrar ${type}`,
+          inputs: [
+              { name: 'date', type: 'date', value: new Date().toISOString().split('T')[0] },
+              { name: 'mileage', type: 'number', placeholder: 'Kilometraje (opcional)' },
+              { name: 'provider', type: 'text', placeholder: 'Taller o proveedor' },
+              { name: 'observation', type: 'textarea', placeholder: 'Observaciones' }
+          ],
+          buttons: [
+              { 
+                  text: 'Cancelar', 
+                  role: 'cancel',
+                  handler: () => {
+                      this.openMaintenanceModal(type as 'Aceite' | 'Alineación' | 'Sincronización');
+                  }
+              },
+              { text: 'Guardar', handler: (data) => {
+                  if (!data.date) { return false; }
+                  this.saveMaintenanceRecord(type, data);
+                  return true;
+              }}
+          ]
+      });
+      await alert.present();
+  }
+
+  saveMaintenanceRecord(type: string, record: any) {
+      if (!this.selectedVehicleId) return;
+      const key = `${this.selectedVehicleId}-${type}`;
+      const serviceData = this.maintenanceData.get(key) || { history: [] };
+      
+      const newRecord = {
+          id: new Date().getTime().toString(),
+          date: record.date,
+          notes: record.observation,
+          provider: record.provider || 'No especificado',
+          mileage: record.mileage,
+          status: 'Realizado'
+      };
+
+      serviceData.history.unshift(newRecord);
+      this.maintenanceData.set(key, serviceData);
+  }
+
+  async openOilModal() { await this.openMaintenanceModal('Aceite'); }
+  async openAlignmentModal() { await this.openMaintenanceModal('Alineación'); }
+  async openSyncModal() { await this.openMaintenanceModal('Sincronización'); }
+
+  getMaintenanceInfo(type: 'Aceite' | 'Alineación' | 'Sincronización'): { text: string, color: string } {
+    if (!this.selectedVehicleId) { return { text: 'N/A', color: 'medium' }; }
+    const serviceData = this.maintenanceData.get(`${this.selectedVehicleId}-${type}`);
+    if (!serviceData || serviceData.history.length === 0) { return { text: 'Revisar', color: 'warning' }; }
+    const latest = serviceData.history[0];
+    const intervalMonths = type === 'Alineación' ? 12 : 6;
+    const nextDueDate = new Date(new Date(latest.date).setMonth(new Date(latest.date).getMonth() + intervalMonths));
+    const statusInfo = this.getStatusInfo(nextDueDate.toISOString());
+    const daysLeft = this.getDaysLeft(nextDueDate.toISOString());
+    if (statusInfo.color === 'danger') { return { text: 'Vencido', color: 'danger' }; }
+    if (statusInfo.color === 'warning') { return { text: `en ${daysLeft}`, color: 'warning' }; }
+    return { text: 'OK', color: 'success' };
   }
 
   async openCdaMapModal() {

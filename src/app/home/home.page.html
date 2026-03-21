@@ -152,45 +152,45 @@
           <ion-row class="animate__animated animate__fadeIn">
             <!-- KIT DE CARRETERA -->
             <ion-col size="4">
-              <div class="service-card" (click)="openRoadKitModal()">
-                <div class="icon-circle" [class.success]="true">
+              <div class="service-card" (click)="openRoadKitModal()" [class.alert]="roadKitInfo.color === 'danger'">
+                <div class="icon-circle" [class.success]="roadKitInfo.color === 'success'" [class.warning]="roadKitInfo.color === 'warning' || roadKitInfo.color === 'danger'">
                   <ion-icon name="medkit-outline"></ion-icon>
                 </div>
                 <span class="service-label">Kit Carr.</span>
-                <ion-badge color="success">Completo</ion-badge>
+                <ion-badge [color]="roadKitInfo.color">{{ roadKitInfo.text }}</ion-badge>
               </div>
             </ion-col>
 
             <!-- ACEITE -->
             <ion-col size="4">
-              <div class="service-card">
-                <div class="icon-circle warning">
+              <div class="service-card" (click)="openOilModal()" [class.alert]="getMaintenanceInfo('Aceite').color === 'danger'">
+                <div class="icon-circle" [class.success]="getMaintenanceInfo('Aceite').color === 'success'" [class.warning]="getMaintenanceInfo('Aceite').color === 'warning' || getMaintenanceInfo('Aceite').color === 'danger'">
                   <ion-icon name="water-outline"></ion-icon>
                 </div>
                 <span class="service-label">Aceite</span>
-                <ion-badge color="warning">Próx. 1k km</ion-badge>
+                <ion-badge [color]="getMaintenanceInfo('Aceite').color">{{ getMaintenanceInfo('Aceite').text }}</ion-badge>
               </div>
             </ion-col>
 
             <!-- ALINEACION -->
             <ion-col size="4">
-              <div class="service-card">
-                <div class="icon-circle">
+              <div class="service-card" (click)="openAlignmentModal()" [class.alert]="getMaintenanceInfo('Alineación').color === 'danger'">
+                <div class="icon-circle" [class.success]="getMaintenanceInfo('Alineación').color === 'success'" [class.warning]="getMaintenanceInfo('Alineación').color === 'warning' || getMaintenanceInfo('Alineación').color === 'danger'">
                   <ion-icon name="options-outline"></ion-icon>
                 </div>
                 <span class="service-label">Alineación</span>
-                <ion-badge color="medium">Ok</ion-badge>
+                <ion-badge [color]="getMaintenanceInfo('Alineación').color">{{ getMaintenanceInfo('Alineación').text }}</ion-badge>
               </div>
             </ion-col>
 
             <!-- SINCRONIZACION -->
             <ion-col size="4">
-              <div class="service-card">
-                <div class="icon-circle warning">
+              <div class="service-card" (click)="openSyncModal()" [class.alert]="getMaintenanceInfo('Sincronización').color === 'danger'">
+                <div class="icon-circle" [class.success]="getMaintenanceInfo('Sincronización').color === 'success'" [class.warning]="getMaintenanceInfo('Sincronización').color === 'warning' || getMaintenanceInfo('Sincronización').color === 'danger'">
                   <ion-icon name="sync-outline"></ion-icon>
                 </div>
                 <span class="service-label">Sincroniz.</span>
-                <ion-badge color="warning">Revisar</ion-badge>
+                <ion-badge [color]="getMaintenanceInfo('Sincronización').color">{{ getMaintenanceInfo('Sincronización').text }}</ion-badge>
               </div>
             </ion-col>
           </ion-row>

@@ -20,7 +20,8 @@ import {
   IonListHeader,
   IonCheckbox,
   IonProgressBar,
-  ModalController
+  ModalController,
+  AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -37,7 +38,8 @@ import {
   squareOutline,
   briefcaseOutline,
   discOutline,
-  flashlightOutline
+  flashlightOutline,
+  helpCircleOutline
 } from 'ionicons/icons';
 
 @Component({
@@ -70,6 +72,9 @@ import {
       <ion-toolbar>
         <ion-title>Kit de Carretera</ion-title>
         <ion-buttons slot="end">
+          <ion-button (click)="showHelp()">
+            <ion-icon name="help-circle-outline"></ion-icon>
+          </ion-button>
           <ion-button (click)="close()">
             <ion-icon name="close-outline"></ion-icon>
           </ion-button>
@@ -95,7 +100,12 @@ import {
       
       <ion-list inset="true">
         <ion-list-header>
-          <ion-label>Elementos del Kit</ion-label>
+          <ion-label>
+            Elementos del Kit
+            <ion-text color="medium">
+              <p class="ion-no-margin" style="font-size: 0.75rem; font-weight: normal; margin-top: 4px;">Ley 769 de 2002 (Colombia)</p>
+            </ion-text>
+          </ion-label>
         </ion-list-header>
 
         <!-- Checklist estándar -->
@@ -205,7 +215,9 @@ import {
 })
 export class RoadKitModalComponent implements OnInit {
   @Input() vehiclePlate: string = '';
+  @Input() kitData: any = null;
   private modalCtrl = inject(ModalController);
+  private alertCtrl = inject(AlertController);
 
   checklist: { name: string, checked: boolean, icon: string }[] = [
     { name: 'Gato hidráulico', checked: true, icon: 'build-outline' },
@@ -223,18 +235,24 @@ export class RoadKitModalComponent implements OnInit {
   };
 
   constructor() {
-    addIcons({ closeOutline, saveOutline, alertCircleOutline, checkmarkCircleOutline, medkitOutline, flameOutline, constructOutline, buildOutline, gitCompareOutline, warningOutline, squareOutline, briefcaseOutline, discOutline, flashlightOutline });
+    addIcons({ closeOutline, saveOutline, alertCircleOutline, checkmarkCircleOutline, medkitOutline, flameOutline, constructOutline, buildOutline, gitCompareOutline, warningOutline, squareOutline, briefcaseOutline, discOutline, flashlightOutline, helpCircleOutline });
   }
 
   ngOnInit() {
-    // Simulamos cargar datos existentes (vigencia de 1 año desde hoy)
-    const today = new Date();
-    const nextYear = new Date(today.setFullYear(today.getFullYear() + 1));
-    
-    this.items = {
-      extinguisher: nextYear.toISOString(),
-      firstAid: nextYear.toISOString()
-    };
+    if (this.kitData) {
+      // Cargar datos existentes si se pasaron al modal
+      this.checklist = this.kitData.checklist;
+      this.items = this.kitData.items;
+    } else {
+      // Si no hay datos, inicializar con valores por defecto
+      const today = new Date();
+      const nextYear = new Date(new Date().setFullYear(today.getFullYear() + 1));
+      
+      this.items = {
+        extinguisher: nextYear.toISOString(),
+        firstAid: nextYear.toISOString()
+      };
+    }
   }
 
   close() {
@@ -242,7 +260,20 @@ export class RoadKitModalComponent implements OnInit {
   }
 
   save() {
-    this.modalCtrl.dismiss({ action: 'save', items: this.items });
+    this.modalCtrl.dismiss({ 
+      action: 'save', 
+      kitData: { items: this.items, checklist: this.checklist }
+    });
+  }
+
+  async showHelp() {
+    const alert = await this.alertCtrl.create({
+      header: 'Normativa Legal',
+      subHeader: 'Código Nacional de Tránsito (Art. 30)',
+      message: 'Ningún vehículo podrá transitar por las vías del territorio nacional sin portar el equipo de carretera.\n\nEl incumplimiento genera una multa de 15 SMLDV (Infracción C.02) y posible inmovilización del vehículo.',
+      buttons: ['Entendido']
+    });
+    await alert.present();
   }
 
   get checkedItemsCount(): number {
