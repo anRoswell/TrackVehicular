@@ -14,9 +14,6 @@ import {
   IonButtons, 
   IonIcon, 
   IonCard, 
-  IonCardHeader,
-  IonCardSubtitle,
-  IonCardTitle,
   IonCardContent, 
   IonBadge, 
   IonGrid, 
@@ -57,9 +54,6 @@ import { ModalController } from '@ionic/angular/standalone';
     IonButtons, 
     IonIcon, 
     IonCard, 
-    IonCardHeader,
-    IonCardSubtitle,
-    IonCardTitle,
     IonCardContent, 
     IonBadge,
     IonGrid,
@@ -83,6 +77,7 @@ export class HomePage implements OnInit {
   public user: AuthUser | undefined;
   public mockFCMData: any = null;
   public isConsultingSIMIT = false;
+  public showMoreServices = false;
   
   constructor() {
     addIcons({
@@ -106,8 +101,17 @@ export class HomePage implements OnInit {
       'notifications-outline': icons.notificationsOutline,
       'warning-outline': icons.warningOutline,
       'construct-outline': icons.constructOutline,
-      'chevron-down-outline': icons.chevronDownOutline
+      'chevron-down-outline': icons.chevronDownOutline,
+      'medkit-outline': icons.medkitOutline,
+      'water-outline': icons.waterOutline,
+      'sync-outline': icons.syncOutline,
+      'options-outline': icons.optionsOutline,
+      'chevron-up-outline': icons.chevronUpOutline
     });
+  }
+
+  toggleMoreServices() {
+    this.showMoreServices = !this.showMoreServices;
   }
 
   ngOnInit() {
@@ -171,11 +175,17 @@ export class HomePage implements OnInit {
   }
 
   getLatestSOAT(vehicleId: string): any {
-    return this.data.getLatestDocumentByType(vehicleId, 'SOAT');
+    if (this.selectedVehicleId === vehicleId && this.mockFCMData && this.mockFCMData.soatHistory && this.mockFCMData.soatHistory.length > 0) {
+      return this.mockFCMData.soatHistory[0];
+    }
+    return this.data.getLatestDocumentByType(vehicleId, 'SOAT') || {};
   }
 
   getLatestTecno(vehicleId: string): any {
-    return this.data.getLatestDocumentByType(vehicleId, 'TECNOMECANICA');
+    if (this.selectedVehicleId === vehicleId && this.mockFCMData && this.mockFCMData.tecnoHistory && this.mockFCMData.tecnoHistory.length > 0) {
+      return this.mockFCMData.tecnoHistory[0];
+    }
+    return this.data.getLatestDocumentByType(vehicleId, 'TECNOMECANICA') || {};
   }
 
   getStatusColor(dateStr: string | undefined): string {
@@ -189,6 +199,22 @@ export class HomePage implements OnInit {
     return 'success';
   }
 
+  getStatusInfo(dateStr: string | undefined): { label: string, color: string } {
+    if (!dateStr) return { label: 'NO DISPONIBLE', color: 'medium' };
+    
+    const expiryDate = new Date(dateStr);
+    const today = new Date();
+    // Normalizar a inicio del día para comparación de días
+    today.setHours(0, 0, 0, 0);
+    
+    const diffTime = expiryDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return { label: 'VENCIDO', color: 'danger' };
+    if (diffDays <= 30) return { label: 'PRÓXIMO A VENCER', color: 'warning' };
+    return { label: 'VIGENTE', color: 'success' };
+  }
+
   getDaysLeft(dateStr: string | undefined): string {
     if (!dateStr) return 'N/A';
     const expiryDate = new Date(dateStr);
@@ -197,6 +223,19 @@ export class HomePage implements OnInit {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     if (diffDays < 0) return 'Vencido';
     return `${diffDays} días`;
+  }
+
+  get activeFinesCount(): number {
+    let fines: any[] = this.data.getFines() || [];
+    if (this.mockFCMData && this.mockFCMData.fines) {
+      fines = this.mockFCMData.fines;
+    }
+    return Array.isArray(fines) ? fines.length : 0;
+  }
+
+  get cdaDaysLeft(): string {
+    const latest = this.selectedVehicleId ? this.getLatestTecno(this.selectedVehicleId) : null;
+    return this.getDaysLeft(latest?.expiresAt);
   }
 
   // LÓGICA DE PICO Y PLACA DINÁMICA
@@ -232,152 +271,169 @@ export class HomePage implements OnInit {
     }
   }
 
+  calculateProgress(startDate: string, endDate: string): number {
+    if (!endDate) return -1; // -1 oculta la barra
+    
+    const end = new Date(endDate).getTime();
+    const now = new Date().getTime();
+    let start = startDate ? new Date(startDate).getTime() : NaN;
+
+    // Si no hay fecha de inicio válida, asumimos 1 año antes del vencimiento (común en SOAT/Tecno)
+    if (isNaN(start)) {
+      start = end - (365 * 24 * 60 * 60 * 1000);
+    }
+
+    if (isNaN(end)) return -1;
+    
+    if (now >= end) return 1;
+    if (now <= start) return 0;
+    
+    const total = end - start;
+    if (total <= 0) return 0;
+
+    const elapsed = now - start;
+    return Math.max(0, Math.min(1, elapsed / total));
+  }
+
   async openFinesModal() {
-    const fines = this.data.getFines();
+    let fines: any[] = this.data.getFines() || [];
+    let summary: any = null;
+    
+    // USAR DATOS SIMULADOS SI ESTÁN DISPONIBLES
+    if (this.mockFCMData) {
+      if (this.mockFCMData.fines) {
+        fines = this.mockFCMData.fines;
+      }
+      if (this.mockFCMData.summary) {
+        summary = this.mockFCMData.summary;
+      }
+    }
+
+    if (!Array.isArray(fines)) {
+      fines = [];
+    }
+
     if (fines.length === 0) {
       const alert = await this.alert.create({
         header: 'Sin multas',
-        message: 'No se encontraron multas pendientes para este vehículo en el sistema del DATT.',
+        message: 'No se encontraron multas pendientes en el sistema.',
         buttons: ['OK']
       });
       await alert.present();
       return;
     }
 
-    const messageHTML = fines.map(f => `
-        <div style="text-align: left; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-          <strong>Ref: ${f.reference_num}</strong><br>
-          <small>${f.description}</small><br>
-          <span style="color: red;">$${f.amount.toLocaleString()}</span>
-        </div>
-      `).join('');
+        const { FinesModalComponent } = await import('../modals/service-detail/fines-modal.component');
+        const modal = await this.modal.create({
+            component: FinesModalComponent,
+            componentProps: {
+                fines: fines,
+                summary: summary
+            },
+            breakpoints: [0, 0.75, 0.9],
+            initialBreakpoint: 0.9
+        });
 
-    const alert = await this.alert.create({
-      header: 'Multas Pendientes',
-      subHeader: `Se encontraron ${fines.length} comparendos`,
-      message: `<div style="max-height: 400px; overflow-y: auto;">${messageHTML}</div>`,
-      buttons: [
-        { text: 'Cerrar', role: 'cancel' },
-        { text: 'Pagar SIMIT', handler: () => { window.open('https://www.fcm.org.co/simit/', '_blank'); } }
-      ]
-    });
-    await alert.present();
-  }
+        await modal.present();
+    }
 
   async openSoatModal() {
     if (!this.selectedVehicleId) return;
+    const vehicle = this.selectedVehicle;
+    const { ServiceDetailComponent } = await import('../modals/service-detail/service-detail.component');
 
-    // Obtener documentos de tipo SOAT del servicio
-    let docs = this.data.getVehicleDocuments(this.selectedVehicleId)
-      .filter(d => d.type === 'SOAT');
-
-    // Fallback: si el servicio devuelve vacío (aún no implementado full), intentamos usar el 'latest' conocido
-    if (docs.length === 0) {
-      const latest = this.getLatestSOAT(this.selectedVehicleId);
-      if (latest) docs = [latest];
+    let latest: any = this.getLatestSOAT(this.selectedVehicleId);
+    let history: any[] = [];
+    
+    // USAR DATOS SIMULADOS SI ESTÁN DISPONIBLES
+    if (this.mockFCMData && this.mockFCMData.soatHistory) {
+      latest = this.mockFCMData.soatHistory[0];
+      history = this.mockFCMData.soatHistory;
     }
+    
+    const statusInfo = this.getStatusInfo(latest?.expiresAt);
+    const progress = this.calculateProgress(latest?.issuedAt, latest?.expiresAt);
+    const daysLeft = this.getDaysLeft(latest?.expiresAt);
+    // Generate fake policy number for demo if not present
+    const policyNum = latest?.policyNumber || 'POL-' + Math.floor(Math.random() * 1000000);
 
-    if (docs.length === 0) {
-      const alert = await this.alert.create({
-        header: 'Historial SOAT',
-        message: 'No se encontraron registros de SOAT para este vehículo.',
-        buttons: ['OK']
-      });
-      await alert.present();
-      return;
-    }
-
-    // Ordenar de mayor (más reciente) a menor fecha de vencimiento
-    docs.sort((a, b) => new Date(b.expiresAt).getTime() - new Date(a.expiresAt).getTime());
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Resetear horas para comparar solo fechas
-
-    const messageHTML = docs.map(doc => {
-      const expireDate = new Date(doc.expiresAt);
-      const isVigente = expireDate >= today;
-      const colorStyle = isVigente ? 'color: var(--ion-color-success); font-weight: bold;' : 'color: var(--ion-color-medium);';
-      const statusText = isVigente ? 'VIGENTE' : 'VENCIDO';
-
-      return `
-        <div style="margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; text-align: left;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <strong style="font-size: 1.1em;">${doc.provider || 'Aseguradora'}</strong>
-            <span style="${colorStyle}">${statusText}</span>
-          </div>
-          <div style="color: #666; font-size: 0.9em;">
-            Vence: ${doc.expiresAt}
-            ${doc.issuedAt ? `<br>Emitido: ${doc.issuedAt}` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    const alert = await this.alert.create({
-      header: 'Historial de SOAT',
-      message: `<div style="max-height: 400px; overflow-y: auto;">${messageHTML}</div>`,
-      buttons: ['Cerrar']
+    const modal = await this.modal.create({
+      component: ServiceDetailComponent,
+      componentProps: {
+        title: 'Seguro SOAT',
+        icon: 'shield-checkmark-outline',
+        plate: vehicle?.plate || '',
+        policyNumber: policyNum,
+        history: history,
+        status: statusInfo.label,
+        statusColor: statusInfo.color,
+        progressBarColor: statusInfo.color,
+        daysRemaining: daysLeft === 'Vencido' ? 'Servicio Vencido' : `Vence en ${daysLeft}`,
+        nextDate: latest?.expiresAt || 'N/A',
+        lastDate: latest?.issuedAt || 'N/A',
+        lastProvider: latest?.provider || 'Aseguradora no registrada',
+        progress: progress,
+        showDownload: true,
+        downloadLabel: 'Descargar SOAT',
+        adText: '¡Evita multas y protege tu vida! Renueva tu SOAT con 5% de descuento exclusivo en nuestra red aliada.',
+        actionLabel: statusInfo.color === 'success' ? 'Comprar Nuevo' : 'Renovar Ahora'
+      },
+      breakpoints: [0, 0.75, 0.9],
+      initialBreakpoint: 0.9
     });
 
-    await alert.present();
+    await modal.present();
   }
 
   async openTecnoModal() {
     if (!this.selectedVehicleId) return;
+    const vehicle = this.selectedVehicle;
+    const { ServiceDetailComponent } = await import('../modals/service-detail/service-detail.component');
 
-    // Obtener documentos de tipo TECNOMECANICA del servicio
-    let docs = this.data.getVehicleDocuments(this.selectedVehicleId)
-      .filter(d => d.type === 'TECNOMECANICA');
-
-    // Fallback: si el servicio devuelve vacío, intentamos usar el 'latest' conocido
-    if (docs.length === 0) {
-      const latest = this.getLatestTecno(this.selectedVehicleId);
-      if (latest) docs = [latest];
+    let latest: any = this.getLatestTecno(this.selectedVehicleId);
+    let history: any[] = [];
+    
+    // USAR DATOS SIMULADOS SI ESTÁN DISPONIBLES
+    if (this.mockFCMData && this.mockFCMData.tecnoHistory) {
+      latest = this.mockFCMData.tecnoHistory[0];
+      history = this.mockFCMData.tecnoHistory;
     }
 
-    if (docs.length === 0) {
-      const alert = await this.alert.create({
-        header: 'Historial Tecnomecánica',
-        message: 'No se encontraron registros de Tecnomecánica para este vehículo.',
-        buttons: ['OK']
-      });
-      await alert.present();
-      return;
-    }
+    const statusInfo = this.getStatusInfo(latest?.expiresAt);
+    const progress = this.calculateProgress(latest?.issuedAt, latest?.expiresAt);
+    const daysLeft = this.getDaysLeft(latest?.expiresAt);
+    const refNum = latest?.reference_num || 'CDA-' + Math.floor(Math.random() * 1000000);
 
-    // Ordenar de mayor (más reciente) a menor fecha de vencimiento
-    docs.sort((a, b) => new Date(b.expiresAt).getTime() - new Date(a.expiresAt).getTime());
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Resetear horas para comparar solo fechas
-
-    const messageHTML = docs.map(doc => {
-      const expireDate = new Date(doc.expiresAt);
-      const isVigente = expireDate >= today;
-      const colorStyle = isVigente ? 'color: var(--ion-color-success); font-weight: bold;' : 'color: var(--ion-color-medium);';
-      const statusText = isVigente ? 'VIGENTE' : 'VENCIDO';
-
-      return `
-        <div style="margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; text-align: left;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <strong style="font-size: 1.1em;">${doc.provider || 'CDA'}</strong>
-            <span style="${colorStyle}">${statusText}</span>
-          </div>
-          <div style="color: #666; font-size: 0.9em;">
-            Vence: ${doc.expiresAt}
-            ${doc.issuedAt ? `<br>Emitido: ${doc.issuedAt}` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    const alert = await this.alert.create({
-      header: 'Historial de Tecnomecánica',
-      message: `<div style="max-height: 400px; overflow-y: auto;">${messageHTML}</div>`,
-      buttons: ['Cerrar']
+    const modal = await this.modal.create({
+      component: ServiceDetailComponent,
+      componentProps: {
+        title: 'Revisión Tecnomecánica',
+        icon: 'construct-outline',
+        plate: vehicle?.plate || '',
+        policyNumber: refNum, // Reusing input for reference number
+        history: history,
+        status: statusInfo.label,
+        statusColor: statusInfo.color,
+        progressBarColor: statusInfo.color,
+        daysRemaining: daysLeft === 'Vencido' ? 'Servicio Vencido' : `Vence en ${daysLeft}`,
+        nextDate: latest?.expiresAt || 'N/A',
+        lastDate: latest?.issuedAt || 'N/A',
+        lastProvider: latest?.provider || 'CDA no registrado',
+        progress: progress,
+        showDownload: false, // Usually tecno is a certificate, could be true if needed
+        adText: '¿Ya realizaste tu revisión? Agenda en CDA La Heroica y recibe un lavado de motor GRATIS por tu inspección.',
+        actionLabel: 'Agendar en CDA'
+      },
+      breakpoints: [0, 0.75, 0.9],
+      initialBreakpoint: 0.75
     });
 
-    await alert.present();
+    await modal.present();
+    
+    const { data } = await modal.onWillDismiss();
+    if (data?.action) {
+      this.openCdaMapModal();
+    }
   }
 
   async openPicoYPlacaModal() {
@@ -431,6 +487,19 @@ export class HomePage implements OnInit {
       initialBreakpoint: 0.9,
       // Add ion-page class to fix content sizing issues inside the modal
       cssClass: 'ion-page'
+    });
+    await modal.present();
+  }
+
+  async openRoadKitModal() {
+    const { RoadKitModalComponent } = await import('../modals/road-kit/road-kit-modal.component');
+    const modal = await this.modal.create({
+      component: RoadKitModalComponent,
+      breakpoints: [0, 1], // Full screen o custom sheet
+      initialBreakpoint: 1,
+      componentProps: { 
+        vehiclePlate: this.selectedVehicle?.plate || ''
+      }
     });
     await modal.present();
   }

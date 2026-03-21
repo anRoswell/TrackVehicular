@@ -1,0 +1,58 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Kit de Carretera</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="header-info">
+    <h2 class="ion-text-center">Estado del Kit</h2>
+    <p class="ion-text-center">Vehículo: <strong>{{ vehiclePlate }}</strong></p>
+  </div>
+
+  <ion-list>
+    <ion-item *ngFor="let item of items">
+      <ion-icon [name]="item.icon" slot="start" size="large" [color]="getStatusColor(item.status)"></ion-icon>
+      <ion-label>
+        <h3>{{ item.name }}</h3>
+        <p *ngIf="item.hasExpiry">
+          Vence: {{ item.expiryDate | date:'dd/MM/yyyy' }}
+        </p>
+        <p *ngIf="!item.hasExpiry">
+          {{ item.required ? 'Obligatorio' : 'Opcional' }}
+        </p>
+      </ion-label>
+      <ion-badge slot="end" [color]="getStatusColor(item.status)">
+        {{ item.status | uppercase }}
+      </ion-badge>
+    </ion-item>
+  </ion-list>
+
+  <div class="ion-margin-top history-section">
+    <h3>Historial de Revisiones</h3>
+    <ion-accordion-group>
+      <ion-accordion value="history">
+        <ion-item slot="header" color="light">
+          <ion-icon name="calendar-outline" slot="start"></ion-icon>
+          <ion-label>Ver registros anteriores</ion-label>
+        </ion-item>
+        <div class="ion-padding" slot="content">
+          <ion-list lines="none">
+            <ion-item *ngFor="let record of history">
+              <ion-label>
+                <h3>{{ record.date | date:'dd/MM/yyyy' }}</h3>
+                <p>{{ record.notes }}</p>
+              </ion-label>
+              <ion-note slot="end">{{ record.status }}</ion-note>
+            </ion-item>
+          </ion-list>
+        </div>
+      </ion-accordion>
+    </ion-accordion-group>
+  </div>
+</ion-content>

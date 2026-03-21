@@ -72,44 +72,6 @@
         </ion-button>
       </div>
 
-      @if (mockFCMData) {
-        <ion-card color="light" class="simit-info-card">
-          <ion-card-header>
-            <ion-card-subtitle>Información consolidada (MOCK SIMIT/FCM)</ion-card-subtitle>
-            <ion-card-title>{{ mockFCMData.vehicle.plate }} - {{ mockFCMData.vehicle.brand }} {{ mockFCMData.vehicle.line }}</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <ion-list lines="none" style="background: transparent;">
-              <ion-item style="--background: transparent;">
-                <ion-icon slot="start" name="shield-checkmark-outline" [color]="mockFCMData.insurance.status === 'VIGENTE' ? 'success' : 'danger'"></ion-icon>
-                <ion-label>
-                  <h2>SOAT: {{ mockFCMData.insurance.status }}</h2>
-                  <p>Vence: {{ mockFCMData.insurance.expiryDate }} ({{ mockFCMData.insurance.company }})</p>
-                </ion-label>
-              </ion-item>
-              <ion-item style="--background: transparent;">
-                <ion-icon slot="start" name="construct-outline" [color]="mockFCMData.technicalReview.status === 'VIGENTE' ? 'success' : 'danger'"></ion-icon>
-                <ion-label>
-                  <h2>Tecnomecánica: {{ mockFCMData.technicalReview.status }}</h2>
-                  <p>Vence: {{ mockFCMData.technicalReview.expiryDate }}</p>
-                </ion-label>
-              </ion-item>
-              <ion-item style="--background: transparent;">
-                <ion-icon slot="start" name="receipt-outline" [color]="mockFCMData.summary.totalFines > 0 ? 'danger' : 'success'"></ion-icon>
-                <ion-label>
-                  <h2>Multas: {{ mockFCMData.summary.totalFines }} pendientes</h2>
-                  @if (mockFCMData.summary.totalFines > 0) {
-                    <p style="color: var(--ion-color-danger); font-weight: bold;">Total: ${{ mockFCMData.summary.totalAmount.toLocaleString() }} {{ mockFCMData.summary.currency }}</p>
-                  } @else {
-                    <p>No se encontraron multas en el sistema.</p>
-                  }
-                </ion-label>
-              </ion-item>
-            </ion-list>
-          </ion-card-content>
-        </ion-card>
-      }
-
       <ion-grid>
         <ion-row>
           <!-- SOAT -->
@@ -133,7 +95,7 @@
               </div>
               <span class="service-label">Multas</span>
               <ion-badge color="danger">
-                {{ (data.fines$ | async)?.length || 0 }} Pend.
+                {{ activeFinesCount }} Pend.
               </ion-badge>
             </div>
           </ion-col>
@@ -159,7 +121,7 @@
               </div>
               <span class="service-label">CDA</span>
               <ion-badge [color]="getStatusColor(getLatestTecno(selectedVehicle.id)?.expiresAt)">
-                {{ getDaysLeft(getLatestTecno(selectedVehicle.id)?.expiresAt) }}
+                {{ cdaDaysLeft }}
               </ion-badge>
             </div>
           </ion-col>
@@ -177,14 +139,62 @@
 
           <!-- MÁS -->
           <ion-col size="4">
-            <div class="service-card">
+            <div class="service-card" (click)="toggleMoreServices()">
               <div class="icon-circle more">
-                <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+                <ion-icon [name]="showMoreServices ? 'chevron-up-outline' : 'ellipsis-vertical-outline'"></ion-icon>
               </div>
-              <span class="service-label">Ver más</span>
+              <span class="service-label">{{ showMoreServices ? 'Ver menos' : 'Ver más' }}</span>
             </div>
           </ion-col>
         </ion-row>
+
+        @if (showMoreServices) {
+          <ion-row class="animate__animated animate__fadeIn">
+            <!-- KIT DE CARRETERA -->
+            <ion-col size="4">
+              <div class="service-card" (click)="openRoadKitModal()">
+                <div class="icon-circle" [class.success]="true">
+                  <ion-icon name="medkit-outline"></ion-icon>
+                </div>
+                <span class="service-label">Kit Carr.</span>
+                <ion-badge color="success">Completo</ion-badge>
+              </div>
+            </ion-col>
+
+            <!-- ACEITE -->
+            <ion-col size="4">
+              <div class="service-card">
+                <div class="icon-circle warning">
+                  <ion-icon name="water-outline"></ion-icon>
+                </div>
+                <span class="service-label">Aceite</span>
+                <ion-badge color="warning">Próx. 1k km</ion-badge>
+              </div>
+            </ion-col>
+
+            <!-- ALINEACION -->
+            <ion-col size="4">
+              <div class="service-card">
+                <div class="icon-circle">
+                  <ion-icon name="options-outline"></ion-icon>
+                </div>
+                <span class="service-label">Alineación</span>
+                <ion-badge color="medium">Ok</ion-badge>
+              </div>
+            </ion-col>
+
+            <!-- SINCRONIZACION -->
+            <ion-col size="4">
+              <div class="service-card">
+                <div class="icon-circle warning">
+                  <ion-icon name="sync-outline"></ion-icon>
+                </div>
+                <span class="service-label">Sincroniz.</span>
+                <ion-badge color="warning">Revisar</ion-badge>
+              </div>
+            </ion-col>
+          </ion-row>
+        }
       </ion-grid>
     </div>
 
