@@ -19,6 +19,7 @@ import {
   IonText,
   IonListHeader,
   IonCheckbox,
+  IonProgressBar,
   ModalController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -61,7 +62,8 @@ import {
     IonFooter,
     IonText,
     IonListHeader,
-    IonCheckbox
+    IonCheckbox,
+    IonProgressBar
   ],
   template: `
     <ion-header [translucent]="true">
@@ -76,6 +78,20 @@ import {
     </ion-header>
 
     <ion-content [fullscreen]="true" class="ion-padding">
+      <div class="summary-card">
+        <ion-text color="dark">
+            <h3 class="ion-no-margin">Resumen del Kit</h3>
+        </ion-text>
+        <ion-progress-bar [value]="kitProgress" [color]="kitStatus.color" class="kit-progress-bar"></ion-progress-bar>
+        <div class="status-line">
+            <ion-text [color]="kitStatus.color">
+                <p class="ion-no-margin"><strong>{{ kitStatus.text }}</strong></p>
+            </ion-text>
+            <ion-text color="medium">
+                <p class="ion-no-margin">{{ checkedItemsCount }} / {{ checklist.length }} items</p>
+            </ion-text>
+        </div>
+      </div>
       
       <ion-list inset="true">
         <ion-list-header>
@@ -83,7 +99,7 @@ import {
         </ion-list-header>
 
         <!-- Checklist estándar -->
-        <ion-item *ngFor="let item of checklist">
+        <ion-item *ngFor="let item of checklist" lines="full">
           <ion-icon [name]="item.icon" slot="start" [color]="item.checked ? 'success' : 'danger'"></ion-icon>
           <ion-label>{{ item.name }}</ion-label>
           <ion-checkbox slot="end" [(ngModel)]="item.checked" color="success"></ion-checkbox>
@@ -160,10 +176,31 @@ import {
     </ion-footer>
   `,
   styles: [`
+    .summary-card {
+      background: var(--ion-color-light, #f4f5f8);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .kit-progress-bar {
+      height: 8px;
+      border-radius: 4px;
+      margin: 12px 0;
+    }
+    .status-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+    }
     .item-icon-wrapper { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px; }
     .item-icon-wrapper.red { background-color: rgba(var(--ion-color-danger-rgb), 0.1); color: var(--ion-color-danger); }
     .item-icon-wrapper.blue { background-color: rgba(var(--ion-color-primary-rgb), 0.1); color: var(--ion-color-primary); }
     .item-icon-wrapper ion-icon { font-size: 20px; }
+    ion-item ion-icon[slot="start"] {
+      transition: color 0.3s ease-in-out;
+    }
   `]
 })
 export class RoadKitModalComponent implements OnInit {
@@ -206,6 +243,26 @@ export class RoadKitModalComponent implements OnInit {
 
   save() {
     this.modalCtrl.dismiss({ action: 'save', items: this.items });
+  }
+
+  get checkedItemsCount(): number {
+    return this.checklist.filter(item => item.checked).length;
+  }
+
+  get kitProgress(): number {
+    if (this.checklist.length === 0) return 1;
+    return this.checkedItemsCount / this.checklist.length;
+  }
+
+  get kitStatus(): { text: string, color: string } {
+    const progress = this.kitProgress;
+    if (progress === 1) {
+      return { text: '¡Kit Completo!', color: 'success' };
+    }
+    if (progress >= 0.7) {
+      return { text: 'Casi listo', color: 'warning' };
+    }
+    return { text: 'Kit Incompleto', color: 'danger' };
   }
 
   isValid(dateStr: string): boolean {
