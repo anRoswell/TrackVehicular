@@ -109,11 +109,13 @@ import {
         </ion-list-header>
 
         <!-- Checklist estándar -->
-        <ion-item *ngFor="let item of checklist" lines="full">
-          <ion-icon [name]="item.icon" slot="start" [color]="item.checked ? 'success' : 'danger'"></ion-icon>
-          <ion-label>{{ item.name }}</ion-label>
-          <ion-checkbox slot="end" [(ngModel)]="item.checked" color="success"></ion-checkbox>
-        </ion-item>
+        @for (item of checklist; track item.name) {
+          <ion-item lines="full">
+            <ion-icon [name]="item.icon" slot="start" [color]="item.checked ? 'success' : 'danger'"></ion-icon>
+            <ion-label>{{ item.name }}</ion-label>
+            <ion-checkbox slot="end" [(ngModel)]="item.checked" color="success"></ion-checkbox>
+          </ion-item>
+        }
 
         <!-- Extintor -->
         <ion-item>

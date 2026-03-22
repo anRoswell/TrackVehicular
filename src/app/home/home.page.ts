@@ -22,8 +22,8 @@ import {
   IonSelect, 
   IonSelectOption,
   IonAvatar,
-  IonText,
-  IonMenuButton,
+  IonMenuButton, 
+  IonSkeletonText,
   AlertController 
 } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
@@ -62,8 +62,8 @@ import { ModalController } from '@ionic/angular/standalone';
     IonSelect,
     IonSelectOption,
     IonAvatar,
-    IonText,
-    IonMenuButton
+    IonMenuButton,
+    IonSkeletonText
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
@@ -79,6 +79,7 @@ export class HomePage implements OnInit {
   public isConsultingSIMIT = false;
   public showMoreServices = false;
   private roadKitsData = new Map<string, any>();
+  public isChangingVehicle = false;
   private maintenanceData = new Map<string, { history: any[] }>();
   
   constructor() {
@@ -150,9 +151,20 @@ export class HomePage implements OnInit {
   onVehicleChange(ev: any) {
     this.selectedVehicleId = ev.detail.value;
     const vehicle = this.selectedVehicle;
-    if (vehicle) {
-      this.data.fetchFinesByPlate(vehicle.plate).subscribe();
+    if (vehicle) {      
+      this.isChangingVehicle = true;
       this.mockFCMData = null; // Reset mock data when vehicle changes
+      this.data.fetchFinesByPlate(vehicle.plate).subscribe({
+        next: () => {},
+        error: (err) => {
+          console.error('Error fetching fines on vehicle change:', err);
+          this.isChangingVehicle = false;
+        },
+        complete: () => {
+          // Small delay to prevent skeleton flickering on fast responses
+          setTimeout(() => this.isChangingVehicle = false, 300);
+        }
+      });
     }
   }
 
@@ -385,8 +397,8 @@ export class HomePage implements OnInit {
         progressStartLabel: latest?.issuedAt ? new Date(latest.issuedAt).toLocaleDateString() : 'Inicio',
         progressEndLabel: latest?.expiresAt ? new Date(latest.expiresAt).toLocaleDateString() : 'Vence'
       },
-      breakpoints: [0, 0.75, 0.9],
-      initialBreakpoint: 0.9,
+      breakpoints: [0, 0.75, 1],
+      initialBreakpoint: 1,
       cssClass: 'ion-page'
     });
 
@@ -433,10 +445,11 @@ export class HomePage implements OnInit {
         actionLabel: 'Agendar en CDA',
         helpText: 'La Revisión Técnico Mecánica certifica que el vehículo cumple con las condiciones mecánicas, ambientales y de seguridad para circular. Es obligatoria anualmente.',
         progressStartLabel: latest?.issuedAt ? new Date(latest.issuedAt).toLocaleDateString() : 'Emisión',
-        progressEndLabel: latest?.expiresAt ? new Date(latest.expiresAt).toLocaleDateString() : 'Vence'
+        progressEndLabel: latest?.expiresAt ? new Date(latest.expiresAt).toLocaleDateString() : 'Vence',
+        showAdButtons: false
       },
-      breakpoints: [0, 0.75, 0.9],
-      initialBreakpoint: 0.75
+      breakpoints: [0, 0.75, 1],
+      initialBreakpoint: 1
     });
 
     await modal.present();
@@ -594,6 +607,9 @@ export class HomePage implements OnInit {
         'Alineación': 'Ajuste de la geometría de la dirección y suspensión. Evita el desgaste irregular de las llantas y mejora la estabilidad.',
         'Sincronización': 'Mantenimiento del sistema de admisión y combustión para asegurar la eficiencia del combustible y reducir emisiones.'
     };
+    const imageUrlMap: Record<string, string> = {
+        'Alineación': 'assets/img/alignment-diagram.png'
+    };
 
     const key = `${this.selectedVehicleId}-${type}`;
     const serviceData = this.maintenanceData.get(key) || { history: [] };
@@ -628,7 +644,11 @@ export class HomePage implements OnInit {
         actionLabel: 'Registrar Nuevo',
         helpText: helpTextMap[type],
         progressStartLabel: latest?.date ? new Date(latest.date).toLocaleDateString() : 'Último cambio',
-        progressEndLabel: nextDueDate.toLocaleDateString()
+        progressEndLabel: nextDueDate.toLocaleDateString(),
+        detailImageUrl: imageUrlMap[type] || '',
+        showMapButton: type === 'Alineación',
+        mapButtonLabel: 'Buscar Talleres',
+        showFab: true
       },
       breakpoints: [0, 0.75, 0.9],
       initialBreakpoint: 0.9,
@@ -638,8 +658,10 @@ export class HomePage implements OnInit {
     await modal.present();
 
     const { data } = await modal.onWillDismiss();
-    if (data?.action) {
+    if (data?.action === true) {
       this.promptAddMaintenanceRecord(type);
+    } else if (data?.action === 'open_map') {
+      this.openCdaMapModal(); // Reutilizamos el modal de mapa de CDA por ahora
     }
   }
 

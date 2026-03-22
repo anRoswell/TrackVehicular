@@ -30,22 +30,26 @@ import { closeOutline, helpCircleOutline, alertCircleOutline } from 'ionicons/ic
       <div class="summary-card ion-text-center">
         <ion-icon name="alert-circle-outline" size="large" color="danger"></ion-icon>
         <h2>{{ fines.length }} Pendientes</h2>
-        <p *ngIf="summary">Total deuda aprox: <strong>{{ summary.totalAmount | currency }}</strong></p>
+        @if (summary) {
+          <p>Total deuda aprox: <strong>{{ summary.totalAmount | currency }}</strong></p>
+        }
       </div>
 
       <ion-list>
-        <ion-item *ngFor="let fine of fines">
-          <ion-label>
-            <h2>{{ fine.code }} - {{ fine.description }}</h2>
-            <p>{{ fine.date | date:'mediumDate' }}</p>
-            <p><small>{{ fine.location }}</small></p>
-          </ion-label>
-          <div slot="end" class="ion-text-end">
-            <ion-badge color="danger">{{ fine.amount | currency }}</ion-badge>
-            <br>
-            <ion-note color="medium" style="font-size: 0.7rem">{{ fine.status }}</ion-note>
-          </div>
-        </ion-item>
+        @for (fine of fines; track fine) {
+          <ion-item>
+            <ion-label>
+              <h2>{{ fine.code }} - {{ fine.description }}</h2>
+              <p>{{ fine.date | date:'mediumDate' }}</p>
+              <p><small>{{ fine.location }}</small></p>
+            </ion-label>
+            <div slot="end" class="ion-text-end">
+              <ion-badge color="danger">{{ fine.amount | currency }}</ion-badge>
+              <br>
+              <ion-note color="medium" style="font-size: 0.7rem">{{ fine.status }}</ion-note>
+            </div>
+          </ion-item>
+        }
       </ion-list>
     </ion-content>
   `,

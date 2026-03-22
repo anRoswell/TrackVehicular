@@ -59,193 +59,255 @@
   </div>
 
   @if (selectedVehicle) {
-    <!-- SECCIÓN 2: SERVICIOS GRID -->
-    <div class="services-container ion-padding">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 class="section-title">Servicios del vehículo</h3>
-        <ion-button size="small" fill="outline" (click)="consultSIMIT()" [disabled]="isConsultingSIMIT">
-          @if (isConsultingSIMIT) {
-            Consultando...
-          } @else {
-            Consultar SIMIT <ion-icon slot="end" name="search-outline"></ion-icon>
-          }
-        </ion-button>
+    @if (isChangingVehicle) {
+      <!-- SKELETON LOADER -->
+      <div class="ion-padding">
+        <!-- Skeleton for services -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <ion-skeleton-text [animated]="true" style="width: 150px; height: 24px;"></ion-skeleton-text>
+          <ion-skeleton-text [animated]="true" style="width: 120px; height: 32px; border-radius: 8px;"></ion-skeleton-text>
+        </div>
+        <ion-grid>
+          <ion-row>
+            @for (item of [1,2,3,4,5,6]; track item) {
+              <ion-col size="4">
+                <div class="service-card">
+                  <ion-skeleton-text [animated]="true" style="width: 48px; height: 48px; border-radius: 50%; margin-bottom: 4px;"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width: 60px; height: 12px; margin-bottom: 4px;"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width: 80px; height: 16px; border-radius: 16px;"></ion-skeleton-text>
+                </div>
+              </ion-col>
+            }
+          </ion-row>
+        </ion-grid>
+  
+        <!-- Skeleton for marketplace -->
+        <div class="marketplace-section" style="margin-top: 16px;">
+          <div class="marketplace-header">
+            <ion-skeleton-text [animated]="true" style="width: 180px; height: 24px;"></ion-skeleton-text>
+          </div>
+          <ion-list lines="none">
+            <ion-item class="marketplace-item">
+              <ion-skeleton-text [animated]="true" slot="start" style="width: 32px; height: 32px; border-radius: 50%;"></ion-skeleton-text>
+              <ion-label>
+                <h2><ion-skeleton-text [animated]="true" style="width: 60%;"></ion-skeleton-text></h2>
+                <p><ion-skeleton-text [animated]="true" style="width: 80%;"></ion-skeleton-text></p>
+              </ion-label>
+            </ion-item>
+            <ion-item class="marketplace-item">
+              <ion-skeleton-text [animated]="true" slot="start" style="width: 32px; height: 32px; border-radius: 50%;"></ion-skeleton-text>
+              <ion-label>
+                <h2><ion-skeleton-text [animated]="true" style="width: 70%;"></ion-skeleton-text></h2>
+                <p><ion-skeleton-text [animated]="true" style="width: 90%;"></ion-skeleton-text></p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
+
+        <!-- Skeleton for summary card -->
+        <ion-card class="summary-card">
+          <ion-card-content>
+            <ion-row class="ion-align-items-center">
+              <ion-col size="2">
+                <ion-skeleton-text [animated]="true" style="width: 32px; height: 32px; border-radius: 50%;"></ion-skeleton-text>
+              </ion-col>
+              <ion-col size="10">
+                <ion-skeleton-text [animated]="true" style="width: 120px; height: 12px;"></ion-skeleton-text>
+                <ion-skeleton-text [animated]="true" style="width: 80px; height: 20px; margin-top: 4px;"></ion-skeleton-text>
+              </ion-col>
+            </ion-row>
+          </ion-card-content>
+        </ion-card>
       </div>
-
-      <ion-grid>
-        <ion-row>
-          <!-- SOAT -->
-          <ion-col size="4">
-            <div class="service-card" (click)="openSoatModal()" [class.alert]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt) === 'danger'">
-              <div class="icon-circle" [class.warning]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt) === 'warning'">
-                <ion-icon name="shield-checkmark-outline"></ion-icon>
-              </div>
-              <span class="service-label">SOAT</span>
-              <ion-badge [color]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt)">
-                {{ getDaysLeft(getLatestSOAT(selectedVehicle.id)?.expiresAt) }}
-              </ion-badge>
-            </div>
-          </ion-col>
-
-          <!-- MULTAS -->
-          <ion-col size="4">
-            <div class="service-card" (click)="openFinesModal()">
-              <div class="icon-circle alert">
-                <ion-icon name="receipt-outline"></ion-icon>
-              </div>
-              <span class="service-label">Multas</span>
-              <ion-badge color="danger">
-                {{ activeFinesCount }} Pend.
-              </ion-badge>
-            </div>
-          </ion-col>
-
-          <!-- PICO Y PLACA (Dinámico) -->
-          <ion-col size="4">
-            <div class="service-card" (click)="openPicoYPlacaModal()" [class.alert]="getPicoYPlacaInfo(selectedVehicle.plate).status === 'Restringido'">
-              <div class="icon-circle" [class.success]="getPicoYPlacaInfo(selectedVehicle.plate).status === 'Libre' || getPicoYPlacaInfo(selectedVehicle.plate).status === 'Puedes circular'">
-                <ion-icon name="calendar-outline"></ion-icon>
-              </div>
-              <span class="service-label">Pico y Placa</span>
-              <ion-badge [color]="getPicoYPlacaInfo(selectedVehicle.plate).color">
-                {{ getPicoYPlacaInfo(selectedVehicle.plate).status }}
-              </ion-badge>
-            </div>
-          </ion-col>
-
-          <!-- CDA / TECNO -->
-          <ion-col size="4">
-            <div class="service-card" (click)="openTecnoModal()">
-              <div class="icon-circle" [class.success]="getStatusColor(getLatestTecno(selectedVehicle.id)?.expiresAt) === 'success'">
-                <ion-icon name="construct-outline"></ion-icon>
-              </div>
-              <span class="service-label">CDA</span>
-              <ion-badge [color]="getStatusColor(getLatestTecno(selectedVehicle.id)?.expiresAt)">
-                {{ cdaDaysLeft }}
-              </ion-badge>
-            </div>
-          </ion-col>
-
-          <!-- IMPUESTOS -->
-          <ion-col size="4">
-            <div class="service-card" (click)="openTaxesModal()">
-              <div class="icon-circle warning">
-                <ion-icon name="receipt-outline"></ion-icon>
-              </div>
-              <span class="service-label">Impuestos</span>
-              <ion-badge color="warning">Abril 15</ion-badge>
-            </div>
-          </ion-col>
-
-          <!-- MÁS -->
-          <ion-col size="4">
-            <div class="service-card" (click)="toggleMoreServices()">
-              <div class="icon-circle more">
-                <ion-icon [name]="showMoreServices ? 'chevron-up-outline' : 'ellipsis-vertical-outline'"></ion-icon>
-              </div>
-              <span class="service-label">{{ showMoreServices ? 'Ver menos' : 'Ver más' }}</span>
-            </div>
-          </ion-col>
-        </ion-row>
-
-        @if (showMoreServices) {
-          <ion-row class="animate__animated animate__fadeIn">
-            <!-- KIT DE CARRETERA -->
+    } @else {
+      <!-- SECCIÓN 2: SERVICIOS GRID -->
+      <div class="services-container ion-padding">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 class="section-title">Servicios del vehículo</h3>
+          <ion-button size="small" fill="outline" (click)="consultSIMIT()" [disabled]="isConsultingSIMIT">
+            @if (isConsultingSIMIT) {
+              Consultando...
+            } @else {
+              Consultar SIMIT <ion-icon slot="end" name="search-outline"></ion-icon>
+            }
+          </ion-button>
+        </div>
+  
+        <ion-grid>
+          <ion-row>
+            <!-- SOAT -->
             <ion-col size="4">
-              <div class="service-card" (click)="openRoadKitModal()" [class.alert]="roadKitInfo.color === 'danger'">
-                <div class="icon-circle" [class.success]="roadKitInfo.color === 'success'" [class.warning]="roadKitInfo.color === 'warning' || roadKitInfo.color === 'danger'">
-                  <ion-icon name="medkit-outline"></ion-icon>
+              <div class="service-card" (click)="openSoatModal()" [class.alert]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt) === 'danger'">
+                <div class="icon-circle" [class.warning]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt) === 'warning'">
+                  <ion-icon name="shield-checkmark-outline"></ion-icon>
                 </div>
-                <span class="service-label">Kit Carr.</span>
-                <ion-badge [color]="roadKitInfo.color">{{ roadKitInfo.text }}</ion-badge>
+                <span class="service-label">SOAT</span>
+                <ion-badge [color]="getStatusColor(getLatestSOAT(selectedVehicle.id)?.expiresAt)">
+                  {{ getDaysLeft(getLatestSOAT(selectedVehicle.id)?.expiresAt) }}
+                </ion-badge>
               </div>
             </ion-col>
-
-            <!-- ACEITE -->
+  
+            <!-- MULTAS -->
             <ion-col size="4">
-              <div class="service-card" (click)="openOilModal()" [class.alert]="getMaintenanceInfo('Aceite').color === 'danger'">
-                <div class="icon-circle" [class.success]="getMaintenanceInfo('Aceite').color === 'success'" [class.warning]="getMaintenanceInfo('Aceite').color === 'warning' || getMaintenanceInfo('Aceite').color === 'danger'">
-                  <ion-icon name="water-outline"></ion-icon>
+              <div class="service-card" (click)="openFinesModal()">
+                <div class="icon-circle alert">
+                  <ion-icon name="receipt-outline"></ion-icon>
                 </div>
-                <span class="service-label">Aceite</span>
-                <ion-badge [color]="getMaintenanceInfo('Aceite').color">{{ getMaintenanceInfo('Aceite').text }}</ion-badge>
+                <span class="service-label">Multas</span>
+                <ion-badge color="danger">
+                  {{ activeFinesCount }} Pend.
+                </ion-badge>
               </div>
             </ion-col>
-
-            <!-- ALINEACION -->
+  
+            <!-- PICO Y PLACA (Dinámico) -->
             <ion-col size="4">
-              <div class="service-card" (click)="openAlignmentModal()" [class.alert]="getMaintenanceInfo('Alineación').color === 'danger'">
-                <div class="icon-circle" [class.success]="getMaintenanceInfo('Alineación').color === 'success'" [class.warning]="getMaintenanceInfo('Alineación').color === 'warning' || getMaintenanceInfo('Alineación').color === 'danger'">
-                  <ion-icon name="options-outline"></ion-icon>
+              <div class="service-card" (click)="openPicoYPlacaModal()" [class.alert]="getPicoYPlacaInfo(selectedVehicle.plate).status === 'Restringido'">
+                <div class="icon-circle" [class.success]="getPicoYPlacaInfo(selectedVehicle.plate).status === 'Libre' || getPicoYPlacaInfo(selectedVehicle.plate).status === 'Puedes circular'">
+                  <ion-icon name="calendar-outline"></ion-icon>
                 </div>
-                <span class="service-label">Alineación</span>
-                <ion-badge [color]="getMaintenanceInfo('Alineación').color">{{ getMaintenanceInfo('Alineación').text }}</ion-badge>
+                <span class="service-label">Pico y Placa</span>
+                <ion-badge [color]="getPicoYPlacaInfo(selectedVehicle.plate).color">
+                  {{ getPicoYPlacaInfo(selectedVehicle.plate).status }}
+                </ion-badge>
               </div>
             </ion-col>
-
-            <!-- SINCRONIZACION -->
+  
+            <!-- CDA / TECNO -->
             <ion-col size="4">
-              <div class="service-card" (click)="openSyncModal()" [class.alert]="getMaintenanceInfo('Sincronización').color === 'danger'">
-                <div class="icon-circle" [class.success]="getMaintenanceInfo('Sincronización').color === 'success'" [class.warning]="getMaintenanceInfo('Sincronización').color === 'warning' || getMaintenanceInfo('Sincronización').color === 'danger'">
-                  <ion-icon name="sync-outline"></ion-icon>
+              <div class="service-card" (click)="openTecnoModal()">
+                <div class="icon-circle" [class.success]="getStatusColor(getLatestTecno(selectedVehicle.id)?.expiresAt) === 'success'">
+                  <ion-icon name="construct-outline"></ion-icon>
                 </div>
-                <span class="service-label">Sincroniz.</span>
-                <ion-badge [color]="getMaintenanceInfo('Sincronización').color">{{ getMaintenanceInfo('Sincronización').text }}</ion-badge>
+                <span class="service-label">CDA</span>
+                <ion-badge [color]="getStatusColor(getLatestTecno(selectedVehicle.id)?.expiresAt)">
+                  {{ cdaDaysLeft }}
+                </ion-badge>
+              </div>
+            </ion-col>
+  
+            <!-- IMPUESTOS -->
+            <ion-col size="4">
+              <div class="service-card" (click)="openTaxesModal()">
+                <div class="icon-circle warning">
+                  <ion-icon name="receipt-outline"></ion-icon>
+                </div>
+                <span class="service-label">Impuestos</span>
+                <ion-badge color="warning">Abril 15</ion-badge>
+              </div>
+            </ion-col>
+  
+            <!-- MÁS -->
+            <ion-col size="4">
+              <div class="service-card" (click)="toggleMoreServices()">
+                <div class="icon-circle more">
+                  <ion-icon [name]="showMoreServices ? 'chevron-up-outline' : 'ellipsis-vertical-outline'"></ion-icon>
+                </div>
+                <span class="service-label">{{ showMoreServices ? 'Ver menos' : 'Ver más' }}</span>
               </div>
             </ion-col>
           </ion-row>
-        }
-      </ion-grid>
-    </div>
-
-    <!-- SECCIÓN 3: MARKETPLACE / COMPRAS -->
-    <div class="marketplace-section ion-padding">
-      <div class="marketplace-header">
-        <h3 class="section-title">Comprar servicios</h3>
-        <ion-text color="primary">
-          <p class="city-selector"><ion-icon name="location-outline"></ion-icon> Cartagena</p>
-        </ion-text>
+  
+          @if (showMoreServices) {
+            <ion-row class="animate__animated animate__fadeIn">
+              <!-- KIT DE CARRETERA -->
+              <ion-col size="4">
+                <div class="service-card" (click)="openRoadKitModal()" [class.alert]="roadKitInfo.color === 'danger'">
+                  <div class="icon-circle" [class.success]="roadKitInfo.color === 'success'" [class.warning]="roadKitInfo.color === 'warning' || roadKitInfo.color === 'danger'">
+                    <ion-icon name="medkit-outline"></ion-icon>
+                  </div>
+                  <span class="service-label">Kit Carr.</span>
+                  <ion-badge [color]="roadKitInfo.color">{{ roadKitInfo.text }}</ion-badge>
+                </div>
+              </ion-col>
+  
+              <!-- ACEITE -->
+              <ion-col size="4">
+                <div class="service-card" (click)="openOilModal()" [class.alert]="getMaintenanceInfo('Aceite').color === 'danger'">
+                  <div class="icon-circle" [class.success]="getMaintenanceInfo('Aceite').color === 'success'" [class.warning]="getMaintenanceInfo('Aceite').color === 'warning' || getMaintenanceInfo('Aceite').color === 'danger'">
+                    <ion-icon name="water-outline"></ion-icon>
+                  </div>
+                  <span class="service-label">Aceite</span>
+                  <ion-badge [color]="getMaintenanceInfo('Aceite').color">{{ getMaintenanceInfo('Aceite').text }}</ion-badge>
+                </div>
+              </ion-col>
+  
+              <!-- ALINEACION -->
+              <ion-col size="4">
+                <div class="service-card" (click)="openAlignmentModal()" [class.alert]="getMaintenanceInfo('Alineación').color === 'danger'">
+                  <div class="icon-circle" [class.success]="getMaintenanceInfo('Alineación').color === 'success'" [class.warning]="getMaintenanceInfo('Alineación').color === 'warning' || getMaintenanceInfo('Alineación').color === 'danger'">
+                    <ion-icon name="options-outline"></ion-icon>
+                  </div>
+                  <span class="service-label">Alineación</span>
+                  <ion-badge [color]="getMaintenanceInfo('Alineación').color">{{ getMaintenanceInfo('Alineación').text }}</ion-badge>
+                </div>
+              </ion-col>
+  
+              <!-- SINCRONIZACION -->
+              <ion-col size="4">
+                <div class="service-card" (click)="openSyncModal()" [class.alert]="getMaintenanceInfo('Sincronización').color === 'danger'">
+                  <div class="icon-circle" [class.success]="getMaintenanceInfo('Sincronización').color === 'success'" [class.warning]="getMaintenanceInfo('Sincronización').color === 'warning' || getMaintenanceInfo('Sincronización').color === 'danger'">
+                    <ion-icon name="sync-outline"></ion-icon>
+                  </div>
+                  <span class="service-label">Sincroniz.</span>
+                  <ion-badge [color]="getMaintenanceInfo('Sincronización').color">{{ getMaintenanceInfo('Sincronización').text }}</ion-badge>
+                </div>
+              </ion-col>
+            </ion-row>
+          }
+        </ion-grid>
       </div>
-      
-      <ion-list lines="none">
-        <ion-item class="marketplace-item">
-          <ion-icon slot="start" name="shield-checkmark-outline" color="primary"></ion-icon>
-          <ion-label>
-            <h2>Renovar SOAT</h2>
-            <p>Recibe tu póliza en 5 minutos</p>
-          </ion-label>
-          <ion-button slot="end" fill="clear">
-            Comprar <ion-icon name="cart-outline" slot="end"></ion-icon>
-          </ion-button>
-        </ion-item>
-
-        <ion-item class="marketplace-item">
-          <ion-icon slot="start" name="construct-outline" color="secondary"></ion-icon>
-          <ion-label>
-            <h2>Cita Tecnomecánica</h2>
-            <p>Agenda en el CDA más cercano</p>
-          </ion-label>
-          <ion-button slot="end" fill="clear" (click)="openCdaMapModal()">
-            Agendar <ion-icon name="calendar-outline" slot="end"></ion-icon>
-          </ion-button>
-        </ion-item>
-      </ion-list>
-    </div>
-
-    <!-- RESUMEN TÉCNICO -->
-    <ion-card class="summary-card">
-      <ion-card-content>
-        <ion-row class="ion-align-items-center">
-          <ion-col size="2">
-            <ion-icon name="speedometer-outline" color="primary" style="font-size: 32px;"></ion-icon>
-          </ion-col>
-          <ion-col size="10">
-            <p class="mileage-label">Kilometraje actual</p>
-            <h2 class="mileage-value">50,230 km</h2>
-          </ion-col>
-        </ion-row>
-      </ion-card-content>
-    </ion-card>
+  
+      <!-- SECCIÓN 3: MARKETPLACE / COMPRAS -->
+      <div class="marketplace-section ion-padding">
+        <div class="marketplace-header">
+          <h3 class="section-title">Comprar servicios</h3>
+          <ion-text color="primary">
+            <p class="city-selector"><ion-icon name="location-outline"></ion-icon> Cartagena</p>
+          </ion-text>
+        </div>
+        
+        <ion-list lines="none">
+          <ion-item class="marketplace-item">
+            <ion-icon slot="start" name="shield-checkmark-outline" color="primary"></ion-icon>
+            <ion-label>
+              <h2>Renovar SOAT</h2>
+              <p>Recibe tu póliza en 5 minutos</p>
+            </ion-label>
+            <ion-button slot="end" fill="clear">
+              Comprar <ion-icon name="cart-outline" slot="end"></ion-icon>
+            </ion-button>
+          </ion-item>
+  
+          <ion-item class="marketplace-item">
+            <ion-icon slot="start" name="construct-outline" color="secondary"></ion-icon>
+            <ion-label>
+              <h2>Cita Tecnomecánica</h2>
+              <p>Agenda en el CDA más cercano</p>
+            </ion-label>
+            <ion-button slot="end" fill="clear" (click)="openCdaMapModal()">
+              Agendar <ion-icon name="calendar-outline" slot="end"></ion-icon>
+            </ion-button>
+          </ion-item>
+        </ion-list>
+      </div>
+  
+      <!-- RESUMEN TÉCNICO -->
+      <ion-card class="summary-card">
+        <ion-card-content>
+          <ion-row class="ion-align-items-center">
+            <ion-col size="2">
+              <ion-icon name="speedometer-outline" color="primary" style="font-size: 32px;"></ion-icon>
+            </ion-col>
+            <ion-col size="10">
+              <p class="mileage-label">Kilometraje actual</p>
+              <h2 class="mileage-value">50,230 km</h2>
+            </ion-col>
+          </ion-row>
+        </ion-card-content>
+      </ion-card>
+    }
   } @else {
     <div class="no-vehicle ion-padding ion-text-center">
       <ion-icon name="warning-outline" size="large" color="medium"></ion-icon>
