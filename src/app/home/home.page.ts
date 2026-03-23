@@ -535,23 +535,24 @@ export class HomePage implements OnInit {
 
   async openRoadKitModal() {
     const { RoadKitModalComponent } = await import('../modals/road-kit/road-kit-modal.component');
-    const currentKitData = this.selectedVehicleId ? this.roadKitsData.get(this.selectedVehicleId) : null;
 
     const modal = await this.modal.create({
       component: RoadKitModalComponent,
       breakpoints: [0, 1], // Full screen o custom sheet
       initialBreakpoint: 1,
       componentProps: { 
-        vehiclePlate: this.selectedVehicle?.plate || '',
-        kitData: currentKitData
+        vehicleId: this.selectedVehicleId,
+        vehiclePlate: this.selectedVehicle?.plate || ''
       }
     });
     await modal.present();
 
-    const { data } = await modal.onWillDismiss();
-    if (data?.action === 'save' && data.kitData && this.selectedVehicleId) {
-      // Aquí se guardarían los datos en el DataService, por ahora lo manejamos en la memoria del componente.
-      this.roadKitsData.set(this.selectedVehicleId, data.kitData);
+    await modal.onWillDismiss();
+    // After dismiss, refresh local info if needed
+    if (this.selectedVehicleId) {
+      this.data.getVehicleRoadKit(this.selectedVehicleId).subscribe(kit => {
+        if (kit) this.roadKitsData.set(this.selectedVehicleId!, { items: { extinguisher: kit.extinguisherExpiry, firstAid: kit.firstAidExpiry }, checklist: kit.checklist });
+      });
     }
   }
 

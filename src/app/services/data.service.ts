@@ -134,20 +134,30 @@ export class DataService {
   }
 
   fetchCDAs(cityName: string): Observable<CDA[]> {
-    // En una aplicación real, esto sería una llamada HTTP.
-    // Por ahora, se devuelven datos de ejemplo para Cartagena.
-    const mockCDAs: CDA[] = [
-      { id: '1', name: 'CDA La Heroica', address: 'Barrio El Bosque, Transversal 54', lat: 10.3997, lng: -75.5144 },
-      { id: '2', name: 'CDA Diagnosticar', address: 'Av. Pedro de Heredia', lat: 10.4085, lng: -75.5085 },
-      { id: '3', name: 'CDA Cartagena', address: 'Zona Industrial Mamonal', lat: 10.349, lng: -75.501 },
-    ];
+    return this.http.get<CDA[]>(`${this.apiUrl}/cdas/city/${cityName}`).pipe(
+      tap(cdas => this.cdasSubject.next(cdas)),
+      catchError(err => {
+        console.error('Error fetching CDAs', err);
+        return of([]);
+      })
+    );
+  }
 
-    if (cityName === 'Cartagena') {
-        this.cdasSubject.next(mockCDAs);
-        return of(mockCDAs);
-    }
-    this.cdasSubject.next([]);
-    return of([]);
+  // Road Kit Methods
+  getRoadKitOptions(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/road-kit/options`);
+  }
+
+  getVehicleRoadKit(vehicleId: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/road-kit/vehicle/${vehicleId}`);
+  }
+
+  getRoadKitHistory(vehicleId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/road-kit/vehicle/${vehicleId}/history`);
+  }
+
+  upsertRoadKit(data: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/road-kit`, data);
   }
 
   getVehicles(): Vehicle[] {

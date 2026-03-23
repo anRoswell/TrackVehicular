@@ -20,8 +20,12 @@ import {
   IonListHeader,
   IonCheckbox,
   IonProgressBar,
+  IonAccordion,
+  IonAccordionGroup,
+  IonNote,
   ModalController,
-  AlertController
+  AlertController,
+  ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -39,8 +43,12 @@ import {
   briefcaseOutline,
   discOutline,
   flashlightOutline,
-  helpCircleOutline
+  helpCircleOutline,
+  calendarOutline,
+  timeOutline,
+  documentTextOutline
 } from 'ionicons/icons';
+import { DataService } from '../../services/data.service';
 
 @Component({
   selector: 'app-road-kit-modal',
@@ -58,14 +66,17 @@ import {
     IonList, 
     IonItem, 
     IonLabel, 
-    IonDatetime,
-    IonDatetimeButton,
+    IonDatetime, 
+    IonDatetimeButton, 
     IonModal,
     IonFooter,
     IonText,
     IonListHeader,
     IonCheckbox,
-    IonProgressBar
+    IonProgressBar,
+    IonAccordion,
+    IonAccordionGroup,
+    IonNote
   ],
   template: `
     <ion-header [translucent]="true">
@@ -176,13 +187,49 @@ import {
         </ion-item>
       </ion-list>
 
+      <!-- Historial -->
+      @if (history && history.length > 0) {
+        <div class="history-section">
+          <h3 class="section-title">Historial de Revisiones</h3>
+          <ion-accordion-group>
+            @for (record of history; track record.id) {
+              <ion-accordion [value]="record.id">
+                <ion-item slot="header" color="light">
+                  <ion-icon name="calendar-outline" slot="start" color="primary"></ion-icon>
+                  <ion-label>
+                    {{ record.checkedAt | date:'mediumDate' }}
+                    <p>{{ record.checkedAt | date:'shortTime' }}</p>
+                  </ion-label>
+                  <ion-note slot="end" [color]="getSnapshotStatus(record.snapshot).color">
+                    {{ getSnapshotStatus(record.snapshot).text }}
+                  </ion-note>
+                </ion-item>
+                <div class="ion-padding" slot="content">
+                  <div class="history-snapshot">
+                    <p *ngIf="record.notes"><strong>Notas:</strong> {{ record.notes }}</p>
+                    <div class="snapshot-grid">
+                      @for (item of record.snapshot.checklist; track item.name) {
+                        <div class="snapshot-item">
+                          <ion-icon [name]="item.icon" [color]="item.checked ? 'success' : 'danger'"></ion-icon>
+                          <span>{{ item.name }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </ion-accordion>
+            }
+          </ion-accordion-group>
+        </div>
+      }
+
     </ion-content>
 
     <ion-footer>
       <ion-toolbar>
-        <ion-button expand="block" class="ion-margin" (click)="save()">
-          <ion-icon slot="start" name="save-outline"></ion-icon>
-          Guardar
+        <ion-button expand="block" class="ion-margin" (click)="save()" [disabled]="isSaving">
+          <ion-icon slot="start" [name]="isSaving ? 'time-outline' : 'save-outline'"></ion-icon>
+          {{ isSaving ? 'Guardando...' : 'Guardar Revisión' }}
         </ion-button>
       </ion-toolbar>
     </ion-footer>
@@ -210,62 +257,145 @@ import {
     .item-icon-wrapper.red { background-color: rgba(var(--ion-color-danger-rgb), 0.1); color: var(--ion-color-danger); }
     .item-icon-wrapper.blue { background-color: rgba(var(--ion-color-primary-rgb), 0.1); color: var(--ion-color-primary); }
     .item-icon-wrapper ion-icon { font-size: 20px; }
-    ion-item ion-icon[slot="start"] {
-      transition: color 0.3s ease-in-out;
+    
+    .history-section {
+      margin-top: 24px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-left: 8px;
+      margin-bottom: 12px;
+      color: var(--ion-color-dark);
+    }
+    .history-snapshot {
+      font-size: 0.9rem;
+    }
+    .snapshot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .snapshot-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--ion-color-medium-shade);
+    }
+    .snapshot-item ion-icon {
+      font-size: 14px;
     }
   `]
 })
 export class RoadKitModalComponent implements OnInit {
+  @Input() vehicleId: string = '';
   @Input() vehiclePlate: string = '';
-  @Input() kitData: any = null;
+  
   private modalCtrl = inject(ModalController);
   private alertCtrl = inject(AlertController);
+  private toastCtrl = inject(ToastController);
+  private dataService = inject(DataService);
 
-  checklist: { name: string, checked: boolean, icon: string }[] = [
-    { name: 'Gato hidráulico', checked: true, icon: 'build-outline' },
-    { name: 'Cruceta', checked: true, icon: 'git-compare-outline' },
-    { name: '2 Señales de carretera', checked: true, icon: 'warning-outline' },
-    { name: '2 Tacos para bloquear', checked: true, icon: 'square-outline' },
-    { name: 'Caja de herramientas', checked: true, icon: 'briefcase-outline' },
-    { name: 'Llanta de repuesto', checked: true, icon: 'disc-outline' },
-    { name: 'Linterna', checked: true, icon: 'flashlight-outline' },
-  ];
-
+  checklist: { name: string, checked: boolean, icon: string }[] = [];
   items = {
     extinguisher: '',
     firstAid: ''
   };
+  history: any[] = [];
+  isSaving = false;
 
   constructor() {
-    addIcons({ closeOutline, saveOutline, alertCircleOutline, checkmarkCircleOutline, medkitOutline, flameOutline, constructOutline, buildOutline, gitCompareOutline, warningOutline, squareOutline, briefcaseOutline, discOutline, flashlightOutline, helpCircleOutline });
+    addIcons({ closeOutline, saveOutline, alertCircleOutline, checkmarkCircleOutline, medkitOutline, flameOutline, constructOutline, buildOutline, gitCompareOutline, warningOutline, squareOutline, briefcaseOutline, discOutline, flashlightOutline, helpCircleOutline, calendarOutline, timeOutline, documentTextOutline });
   }
 
   ngOnInit() {
-    if (this.kitData) {
-      // Cargar datos existentes si se pasaron al modal
-      this.checklist = this.kitData.checklist;
-      this.items = this.kitData.items;
-    } else {
-      // Si no hay datos, inicializar con valores por defecto
-      const today = new Date();
-      const nextYear = new Date(new Date().setFullYear(today.getFullYear() + 1));
-      
-      this.items = {
-        extinguisher: nextYear.toISOString(),
-        firstAid: nextYear.toISOString()
-      };
-    }
+    this.loadData();
+  }
+
+  async loadData() {
+    if (!this.vehicleId) return;
+
+    // Load standard options/checklist first
+    this.dataService.getRoadKitOptions().subscribe(options => {
+      // Create initial checklist from options
+      this.checklist = options
+        .filter(opt => opt.name !== 'Extintor' && opt.name !== 'Botiquín')
+        .map(opt => ({
+          name: opt.name,
+          checked: false,
+          icon: opt.icon
+        }));
+
+      // Try to load current vehicle kit status
+      this.dataService.getVehicleRoadKit(this.vehicleId).subscribe({
+        next: (kit) => {
+          if (kit) {
+            this.checklist = kit.checklist;
+            this.items.extinguisher = kit.extinguisherExpiry;
+            this.items.firstAid = kit.firstAidExpiry;
+          } else {
+            this.initDefaultDates();
+          }
+        },
+        error: () => this.initDefaultDates()
+      });
+    });
+
+    // Load history
+    this.dataService.getRoadKitHistory(this.vehicleId).subscribe(history => {
+      this.history = history;
+    });
+  }
+
+  initDefaultDates() {
+    const today = new Date();
+    const nextYear = new Date(new Date().setFullYear(today.getFullYear() + 1));
+    this.items.extinguisher = nextYear.toISOString();
+    this.items.firstAid = nextYear.toISOString();
   }
 
   close() {
     this.modalCtrl.dismiss();
   }
 
-  save() {
-    this.modalCtrl.dismiss({ 
-      action: 'save', 
-      kitData: { items: this.items, checklist: this.checklist }
+  async save() {
+    if (!this.vehicleId) return;
+
+    this.isSaving = true;
+    const payload = {
+      vehicleId: this.vehicleId,
+      checklist: this.checklist,
+      extinguisherExpiry: this.items.extinguisher,
+      firstAidExpiry: this.items.firstAid,
+      createdBy: '00000000-0000-0000-0000-000000000000', // Should be current user ID
+      notes: 'Revisión manual desde la App'
+    };
+
+    this.dataService.upsertRoadKit(payload).subscribe({
+      next: (res) => {
+        this.isSaving = false;
+        this.showToast('Revisión guardada con éxito');
+        this.loadData(); // Refresh history
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.showToast('Error al guardar la revisión', 'danger');
+        console.error(err);
+      }
     });
+  }
+
+  async showToast(message: string, color: string = 'success') {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 2000,
+      color,
+      position: 'bottom'
+    });
+    await toast.present();
   }
 
   async showHelp() {
@@ -298,11 +428,18 @@ export class RoadKitModalComponent implements OnInit {
     return { text: 'Kit Incompleto', color: 'danger' };
   }
 
+  getSnapshotStatus(snapshot: any): { text: string, color: string } {
+    const checked = snapshot.checklist.filter((i: any) => i.checked).length;
+    const total = snapshot.checklist.length;
+    if (checked === total) return { text: 'Completo', color: 'success' };
+    return { text: 'Incompleto', color: 'warning' };
+  }
+
   isValid(dateStr: string): boolean {
     if (!dateStr) return false;
     const date = new Date(dateStr);
     const now = new Date();
-    now.setHours(0,0,0,0); // Ignorar hora para la comparación
+    now.setHours(0,0,0,0);
     date.setHours(0,0,0,0);
     return date >= now;
   }
