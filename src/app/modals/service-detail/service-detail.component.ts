@@ -1,12 +1,13 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonButton, IonIcon, 
   IonLabel, IonNote, IonProgressBar, IonFooter,
-  ModalController, AlertController, IonFab, IonFabButton 
+  ModalController, AlertController, IonFab, IonFabButton
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { closeOutline, helpCircleOutline, downloadOutline, addOutline, timeOutline, imageOutline, informationCircleOutline, locationOutline, checkmarkCircle, listOutline, chevronDownOutline, chevronUpOutline, calendarOutline, checkmarkCircleOutline, sparklesOutline, refreshOutline } from 'ionicons/icons';
+import { closeOutline, helpCircleOutline, downloadOutline, addOutline, timeOutline, imageOutline, informationCircleOutline, locationOutline, checkmarkCircle, listOutline, chevronDownOutline, chevronUpOutline, calendarOutline, checkmarkCircleOutline, sparklesOutline, refreshOutline, cartOutline, callOutline } from 'ionicons/icons';
+import { DataService } from '../../services/data.service';
 
 @Component({
   selector: 'app-service-detail',
@@ -114,7 +115,7 @@ import { closeOutline, helpCircleOutline, downloadOutline, addOutline, timeOutli
           } @else {
             <div class="image-placeholder">
               <ion-icon name="image-outline" color="medium"></ion-icon>
-              <p>No se pudo cargar la ilustración</p>
+              <p>No se pudo cargar la illustration</p>
             </div>
           }
         </div>
@@ -386,7 +387,7 @@ import { closeOutline, helpCircleOutline, downloadOutline, addOutline, timeOutli
     }
   `]
 })
-export class ServiceDetailComponent {
+export class ServiceDetailComponent implements OnInit {
   @Input() title: string = '';
   @Input() icon: string = '';
   @Input() plate: string = '';
@@ -411,15 +412,22 @@ export class ServiceDetailComponent {
   @Input() mapButtonLabel: string = 'Ver talleres';
   @Input() showFab: boolean = false;
   @Input() showAdButtons: boolean = true;
+  @Input() storeType: string = 'SOAT'; // 'SOAT', 'CDA', 'MAINTENANCE'
+  
   public imageError = false;
   public showHistory = false;
+  
+  currentCity: string = 'Cartagena';
 
   private modalCtrl = inject(ModalController);
   private alertCtrl = inject(AlertController);
+  private dataService = inject(DataService);
 
   constructor() { 
-    addIcons({ closeOutline, helpCircleOutline, downloadOutline, addOutline, timeOutline, imageOutline, informationCircleOutline, locationOutline, checkmarkCircle, listOutline, chevronDownOutline, chevronUpOutline, calendarOutline, checkmarkCircleOutline, sparklesOutline, refreshOutline });
+    addIcons({ closeOutline, helpCircleOutline, downloadOutline, addOutline, timeOutline, imageOutline, informationCircleOutline, locationOutline, checkmarkCircle, listOutline, chevronDownOutline, chevronUpOutline, calendarOutline, checkmarkCircleOutline, sparklesOutline, refreshOutline, cartOutline, callOutline });
   }
+
+  ngOnInit() {}
 
   close() { this.modalCtrl.dismiss(); }
   performAction() { this.modalCtrl.dismiss({ action: true }); }
@@ -429,15 +437,24 @@ export class ServiceDetailComponent {
     await alert.present();
   }
 
-  openMap() {
-    this.modalCtrl.dismiss({ action: 'open_map' });
+  async openMap() {
+    const { StoreListModalComponent } = await import('../store-list/store-list-modal.component');
+    const modal = await this.modalCtrl.create({
+      component: StoreListModalComponent,
+      componentProps: {
+        city: this.currentCity,
+        storeType: this.storeType
+      },
+      breakpoints: [0, 0.5, 0.8],
+      initialBreakpoint: 0.5
+    });
+    await modal.present();
   }
 
   downloadSoat() {
-    // In a real app, this would trigger a download. For now, we show an alert or handle via dismissal
     this.alertCtrl.create({
       header: 'Descarga',
-      message: 'Tu documento SOAT se está descargando...',
+      message: 'Tu documento se está descargando...',
       buttons: ['OK']
     }).then(a => a.present());
   }

@@ -395,7 +395,8 @@ export class HomePage implements OnInit {
         actionLabel: statusInfo.color === 'success' ? 'Comprar Nuevo' : 'Renovar Ahora',
         helpText: 'El SOAT (Seguro Obligatorio de Accidentes de Tránsito) cubre los daños corporales causados a las personas en accidentes. Es obligatorio para todos los vehículos.',
         progressStartLabel: latest?.issuedAt ? new Date(latest.issuedAt).toLocaleDateString() : 'Inicio',
-        progressEndLabel: latest?.expiresAt ? new Date(latest.expiresAt).toLocaleDateString() : 'Vence'
+        progressEndLabel: latest?.expiresAt ? new Date(latest.expiresAt).toLocaleDateString() : 'Vence',
+        storeType: 'SOAT'
       },
       breakpoints: [0, 0.75, 1],
       initialBreakpoint: 1,
@@ -446,7 +447,8 @@ export class HomePage implements OnInit {
         helpText: 'La Revisión Técnico Mecánica certifica que el vehículo cumple con las condiciones mecánicas, ambientales y de seguridad para circular. Es obligatoria anualmente.',
         progressStartLabel: latest?.issuedAt ? new Date(latest.issuedAt).toLocaleDateString() : 'Emisión',
         progressEndLabel: latest?.expiresAt ? new Date(latest.expiresAt).toLocaleDateString() : 'Vence',
-        showAdButtons: false
+        showAdButtons: false,
+        storeType: 'CDA'
       },
       breakpoints: [0, 0.75, 1],
       initialBreakpoint: 1

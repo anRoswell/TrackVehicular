@@ -23,6 +23,8 @@ import {
   IonAccordion,
   IonAccordionGroup,
   IonNote,
+  IonTextarea,
+  IonToggle,
   ModalController,
   AlertController,
   ToastController
@@ -46,7 +48,12 @@ import {
   helpCircleOutline,
   calendarOutline,
   timeOutline,
-  documentTextOutline
+  documentTextOutline,
+  informationCircleOutline,
+  addOutline,
+  refreshOutline,
+  trashOutline,
+  cartOutline
 } from 'ionicons/icons';
 import { DataService } from '../../services/data.service';
 
@@ -76,7 +83,9 @@ import { DataService } from '../../services/data.service';
     IonProgressBar,
     IonAccordion,
     IonAccordionGroup,
-    IonNote
+    IonNote,
+    IonTextarea,
+    IonToggle
   ],
   template: `
     <ion-header [translucent]="true">
@@ -94,17 +103,32 @@ import { DataService } from '../../services/data.service';
     </ion-header>
 
     <ion-content [fullscreen]="true" class="ion-padding">
+      
+      <!-- Resumen y Acciones Rápidas -->
       <div class="summary-card">
-        <ion-text color="dark">
-            <h3 class="ion-no-margin">Resumen del Kit</h3>
-        </ion-text>
+        <div class="header-row">
+          <ion-text color="dark">
+              <h3 class="ion-no-margin">Estado Actual</h3>
+          </ion-text>
+          <div class="actions">
+            <ion-button fill="clear" size="small" (click)="confirmNewInspection()">
+              <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+            </ion-button>
+            <ion-button fill="solid" color="secondary" size="small" (click)="showStores()">
+              <ion-icon slot="start" name="cart-outline"></ion-icon>
+              Comprar
+            </ion-button>
+          </div>
+        </div>
+        
         <ion-progress-bar [value]="kitProgress" [color]="kitStatus.color" class="kit-progress-bar"></ion-progress-bar>
+        
         <div class="status-line">
             <ion-text [color]="kitStatus.color">
                 <p class="ion-no-margin"><strong>{{ kitStatus.text }}</strong></p>
             </ion-text>
             <ion-text color="medium">
-                <p class="ion-no-margin">{{ checkedItemsCount }} / {{ checklist.length }} items</p>
+                <p class="ion-no-margin">{{ checkedItemsCount }} / {{ totalItems }} elementos</p>
             </ion-text>
         </div>
       </div>
@@ -114,78 +138,82 @@ import { DataService } from '../../services/data.service';
           <ion-label>
             Elementos del Kit
             <ion-text color="medium">
-              <p class="ion-no-margin" style="font-size: 0.75rem; font-weight: normal; margin-top: 4px;">Ley 769 de 2002 (Colombia)</p>
+              <p class="ion-no-margin" style="font-size: 0.75rem; font-weight: normal; margin-top: 4px;">Selecciona los elementos que posees actualmente</p>
             </ion-text>
           </ion-label>
         </ion-list-header>
 
-        <!-- Checklist estándar -->
+        <!-- Checklist Dinámico -->
         @for (item of checklist; track item.name) {
           <ion-item lines="full">
-            <ion-icon [name]="item.icon" slot="start" [color]="item.checked ? 'success' : 'danger'"></ion-icon>
-            <ion-label>{{ item.name }}</ion-label>
+            <ion-icon [name]="item.icon" slot="start" [color]="item.checked ? 'success' : 'medium'"></ion-icon>
+            <ion-label>
+              <h3>{{ item.name }}</h3>
+              <p>{{ item.description }}</p>
+            </ion-label>
             <ion-checkbox slot="end" [(ngModel)]="item.checked" color="success"></ion-checkbox>
           </ion-item>
         }
 
         <!-- Extintor -->
-        <ion-item>
-          <div slot="start" class="item-icon-wrapper red">
-            <ion-icon name="flame-outline"></ion-icon>
-          </div>
-          <ion-label>
-            <h2>Extintor</h2>
-            <p>
-              <ion-text [color]="isValid(items.extinguisher) ? 'success' : 'danger'">
-                {{ isValid(items.extinguisher) ? 'Vigente' : 'Vencido' }}
-              </ion-text>
-            </p>
-          </ion-label>
-          <ion-datetime-button datetime="extinguisherDate"></ion-datetime-button>
-          
-          <ion-modal [keepContentsMounted]="true">
-            <ng-template>
-              <ion-datetime 
-                id="extinguisherDate" 
-                presentation="date" 
-                [(ngModel)]="items.extinguisher"
-                [showDefaultButtons]="true"
-                doneText="Confirmar"
-                cancelText="Cancelar"
-              ></ion-datetime>
-            </ng-template>
-          </ion-modal>
-        </ion-item>
+        @if (extinguisherItem) {
+          <ion-item>
+            <div slot="start" class="item-icon-wrapper" [style.background-color]="'rgba(var(--ion-color-danger-rgb), 0.1)'">
+              <ion-icon [name]="extinguisherItem.icon" color="danger"></ion-icon>
+            </div>
+            <ion-label>
+              <h2>{{ extinguisherItem.name }}</h2>
+              <p>
+                <ion-text [color]="isValid(items.extinguisher) ? 'success' : 'danger'">
+                  {{ isValid(items.extinguisher) ? 'Vigente' : 'Vencido' }}
+                </ion-text>
+              </p>
+            </ion-label>
+            <ion-datetime-button datetime="extinguisherDate"></ion-datetime-button>
+            <ion-modal [keepContentsMounted]="true">
+              <ng-template>
+                <ion-datetime id="extinguisherDate" presentation="date" [(ngModel)]="items.extinguisher" [showDefaultButtons]="true"></ion-datetime>
+              </ng-template>
+            </ion-modal>
+          </ion-item>
+        }
 
         <!-- Botiquín -->
-        <ion-item>
-          <div slot="start" class="item-icon-wrapper blue">
-            <ion-icon name="medkit-outline"></ion-icon>
-          </div>
-          <ion-label>
-            <h2>Botiquín</h2>
-            <p>
-              <ion-text [color]="isValid(items.firstAid) ? 'success' : 'danger'">
-                {{ isValid(items.firstAid) ? 'Vigente' : 'Vencido' }}
-              </ion-text>
-            </p>
-          </ion-label>
-          <ion-datetime-button datetime="kitDate"></ion-datetime-button>
-          
-          <ion-modal [keepContentsMounted]="true">
-            <ng-template>
-              <ion-datetime 
-                id="kitDate" 
-                presentation="date" 
-                [(ngModel)]="items.firstAid"
-                [showDefaultButtons]="true"
-                doneText="Confirmar"
-                cancelText="Cancelar"
-              ></ion-datetime>
-            </ng-template>
-          </ion-modal>
-        </ion-item>
+        @if (firstAidItem) {
+          <ion-item>
+            <div slot="start" class="item-icon-wrapper" [style.background-color]="'rgba(var(--ion-color-success-rgb), 0.1)'">
+              <ion-icon [name]="firstAidItem.icon" color="success"></ion-icon>
+            </div>
+            <ion-label>
+              <h2>{{ firstAidItem.name }}</h2>
+              <p>
+                <ion-text [color]="isValid(items.firstAid) ? 'success' : 'danger'">
+                  {{ isValid(items.firstAid) ? 'Vigente' : 'Vencido' }}
+                </ion-text>
+              </p>
+            </ion-label>
+            <ion-datetime-button datetime="kitDate"></ion-datetime-button>
+            <ion-modal [keepContentsMounted]="true">
+              <ng-template>
+                <ion-datetime id="kitDate" presentation="date" [(ngModel)]="items.firstAid" [showDefaultButtons]="true"></ion-datetime>
+              </ng-template>
+            </ion-modal>
+          </ion-item>
+        }
       </ion-list>
+
+      <!-- Notas de la revisión -->
+      <div class="notes-section">
+        <ion-item lines="none" class="notes-item">
+          <ion-label position="stacked">Notas de la revisión</ion-label>
+          <ion-textarea 
+            [(ngModel)]="notes" 
+            placeholder="Ej: Se renovó el extintor, botiquín completo..."
+            [autoGrow]="true"
+            rows="2">
+          </ion-textarea>
+        </ion-item>
+      </div>
 
       <!-- Historial -->
       @if (history && history.length > 0) {
@@ -206,7 +234,7 @@ import { DataService } from '../../services/data.service';
                 </ion-item>
                 <div class="ion-padding" slot="content">
                   <div class="history-snapshot">
-                    <p *ngIf="record.notes"><strong>Notas:</strong> {{ record.notes }}</p>
+                    <p *ngIf="record.notes"><strong>Comentarios:</strong> {{ record.notes }}</p>
                     <div class="snapshot-grid">
                       @for (item of record.snapshot.checklist; track item.name) {
                         <div class="snapshot-item">
@@ -225,9 +253,9 @@ import { DataService } from '../../services/data.service';
 
     </ion-content>
 
-    <ion-footer>
-      <ion-toolbar>
-        <ion-button expand="block" class="ion-margin" (click)="save()" [disabled]="isSaving">
+    <ion-footer class="ion-no-border">
+      <ion-toolbar class="ion-padding-horizontal ion-padding-bottom">
+        <ion-button expand="block" (click)="save()" [disabled]="isSaving" class="save-btn">
           <ion-icon slot="start" [name]="isSaving ? 'time-outline' : 'save-outline'"></ion-icon>
           {{ isSaving ? 'Guardando...' : 'Guardar Revisión' }}
         </ion-button>
@@ -237,56 +265,76 @@ import { DataService } from '../../services/data.service';
   styles: [`
     .summary-card {
       background: var(--ion-color-light, #f4f5f8);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .header-row h3 { font-weight: 700; font-size: 1.2rem; }
+    .header-row .actions { display: flex; align-items: center; gap: 4px; }
+    
     .kit-progress-bar {
-      height: 8px;
-      border-radius: 4px;
+      height: 10px;
+      border-radius: 5px;
       margin: 12px 0;
     }
     .status-line {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
     }
-    .item-icon-wrapper { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px; }
-    .item-icon-wrapper.red { background-color: rgba(var(--ion-color-danger-rgb), 0.1); color: var(--ion-color-danger); }
-    .item-icon-wrapper.blue { background-color: rgba(var(--ion-color-primary-rgb), 0.1); color: var(--ion-color-primary); }
-    .item-icon-wrapper ion-icon { font-size: 20px; }
+    .item-icon-wrapper { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 12px; }
     
+    .notes-section {
+      margin: 20px 8px;
+    }
+    .notes-item {
+      --background: var(--ion-color-light);
+      --border-radius: 12px;
+      padding: 4px 8px;
+    }
+
     .history-section {
-      margin-top: 24px;
-      margin-bottom: 16px;
+      margin-top: 30px;
+      margin-bottom: 20px;
     }
     .section-title {
       font-size: 1.1rem;
-      font-weight: 600;
+      font-weight: 700;
       margin-left: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 15px;
       color: var(--ion-color-dark);
     }
-    .history-snapshot {
-      font-size: 0.9rem;
-    }
+    .history-snapshot { font-size: 0.9rem; }
     .snapshot-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
+      gap: 10px;
+      margin-top: 12px;
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 8px;
     }
     .snapshot-item {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       font-size: 0.8rem;
-      color: var(--ion-color-medium-shade);
+      color: var(--ion-color-dark);
     }
-    .snapshot-item ion-icon {
-      font-size: 14px;
+    .save-btn {
+      --border-radius: 12px;
+      --padding-top: 18px;
+      --padding-bottom: 18px;
+      font-weight: 700;
+      height: 50px;
     }
   `]
 })
@@ -299,7 +347,13 @@ export class RoadKitModalComponent implements OnInit {
   private toastCtrl = inject(ToastController);
   private dataService = inject(DataService);
 
-  checklist: { name: string, checked: boolean, icon: string }[] = [];
+  checklist: any[] = [];
+  extinguisherItem: any = null;
+  firstAidItem: any = null;
+  notes: string = '';
+  
+  currentCity: string = 'Cartagena';
+
   items = {
     extinguisher: '',
     firstAid: ''
@@ -308,43 +362,43 @@ export class RoadKitModalComponent implements OnInit {
   isSaving = false;
 
   constructor() {
-    addIcons({ closeOutline, saveOutline, alertCircleOutline, checkmarkCircleOutline, medkitOutline, flameOutline, constructOutline, buildOutline, gitCompareOutline, warningOutline, squareOutline, briefcaseOutline, discOutline, flashlightOutline, helpCircleOutline, calendarOutline, timeOutline, documentTextOutline });
+    addIcons({ closeOutline, saveOutline, alertCircleOutline, checkmarkCircleOutline, medkitOutline, flameOutline, constructOutline, buildOutline, gitCompareOutline, warningOutline, squareOutline, briefcaseOutline, discOutline, flashlightOutline, helpCircleOutline, calendarOutline, timeOutline, documentTextOutline, informationCircleOutline, addOutline, refreshOutline, trashOutline, cartOutline });
   }
 
   ngOnInit() {
     this.loadData();
   }
 
+  get totalItems(): number {
+    return this.checklist.length + (this.extinguisherItem ? 1 : 0) + (this.firstAidItem ? 1 : 0);
+  }
+
   async loadData() {
     if (!this.vehicleId) return;
 
-    // Load standard options/checklist first
     this.dataService.getRoadKitOptions().subscribe(options => {
-      // Create initial checklist from options
-      this.checklist = options
-        .filter(opt => opt.name !== 'Extintor' && opt.name !== 'Botiquín')
-        .map(opt => ({
-          name: opt.name,
-          checked: false,
-          icon: opt.icon
-        }));
+      this.extinguisherItem = options.find(o => o.name === 'Extintor');
+      this.firstAidItem = options.find(o => o.name === 'Botiquín');
+      const standardItems = options.filter(o => o.name !== 'Extintor' && o.name !== 'Botiquín');
 
-      // Try to load current vehicle kit status
       this.dataService.getVehicleRoadKit(this.vehicleId).subscribe({
         next: (kit) => {
-          if (kit) {
+          if (kit && kit.checklist) {
             this.checklist = kit.checklist;
             this.items.extinguisher = kit.extinguisherExpiry;
             this.items.firstAid = kit.firstAidExpiry;
           } else {
+            this.checklist = standardItems.map(o => ({ ...o, checked: false }));
             this.initDefaultDates();
           }
         },
-        error: () => this.initDefaultDates()
+        error: () => {
+          this.checklist = standardItems.map(o => ({ ...o, checked: false }));
+          this.initDefaultDates();
+        }
       });
     });
 
-    // Load history
     this.dataService.getRoadKitHistory(this.vehicleId).subscribe(history => {
       this.history = history;
     });
@@ -355,6 +409,39 @@ export class RoadKitModalComponent implements OnInit {
     const nextYear = new Date(new Date().setFullYear(today.getFullYear() + 1));
     this.items.extinguisher = nextYear.toISOString();
     this.items.firstAid = nextYear.toISOString();
+  }
+
+  async showStores() {
+    const { StoreListModalComponent } = await import('../store-list/store-list-modal.component');
+    const modal = await this.modalCtrl.create({
+      component: StoreListModalComponent,
+      componentProps: {
+        city: this.currentCity,
+        storeType: 'ROAD_KIT'
+      },
+      breakpoints: [0, 0.5, 0.8],
+      initialBreakpoint: 0.5
+    });
+    await modal.present();
+  }
+
+  async confirmNewInspection() {
+    const alert = await this.alertCtrl.create({
+      header: 'Nueva Inspección',
+      message: '¿Deseas limpiar la selección actual para iniciar una revisión desde cero?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { 
+          text: 'Sí, iniciar', 
+          handler: () => {
+            this.checklist.forEach(i => i.checked = false);
+            this.notes = '';
+            this.showToast('Lista preparada para nueva revisión', 'primary');
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 
   close() {
@@ -370,31 +457,26 @@ export class RoadKitModalComponent implements OnInit {
       checklist: this.checklist,
       extinguisherExpiry: this.items.extinguisher,
       firstAidExpiry: this.items.firstAid,
-      createdBy: '00000000-0000-0000-0000-000000000000', // Should be current user ID
-      notes: 'Revisión manual desde la App'
+      createdBy: '00000000-0000-0000-0000-000000000000',
+      notes: this.notes || 'Revisión técnica periódica'
     };
 
     this.dataService.upsertRoadKit(payload).subscribe({
       next: (res) => {
         this.isSaving = false;
-        this.showToast('Revisión guardada con éxito');
-        this.loadData(); // Refresh history
+        this.notes = '';
+        this.showToast('Revisión registrada y guardada en el historial');
+        this.loadData();
       },
       error: (err) => {
         this.isSaving = false;
-        this.showToast('Error al guardar la revisión', 'danger');
-        console.error(err);
+        this.showToast('Error al guardar', 'danger');
       }
     });
   }
 
   async showToast(message: string, color: string = 'success') {
-    const toast = await this.toastCtrl.create({
-      message,
-      duration: 2000,
-      color,
-      position: 'bottom'
-    });
+    const toast = await this.toastCtrl.create({ message, duration: 2000, color, position: 'bottom' });
     await toast.present();
   }
 
@@ -402,29 +484,29 @@ export class RoadKitModalComponent implements OnInit {
     const alert = await this.alertCtrl.create({
       header: 'Normativa Legal',
       subHeader: 'Código Nacional de Tránsito (Art. 30)',
-      message: 'Ningún vehículo podrá transitar por las vías del territorio nacional sin portar el equipo de carretera.\n\nEl incumplimiento genera una multa de 15 SMLDV (Infracción C.02) y posible inmovilización del vehículo.',
+      message: 'Todo vehículo debe portar el equipo de carretera. Contar con los elementos vigentes garantiza tu seguridad y evita sanciones.',
       buttons: ['Entendido']
     });
     await alert.present();
   }
 
   get checkedItemsCount(): number {
-    return this.checklist.filter(item => item.checked).length;
+    const checklistChecked = this.checklist.filter(item => item.checked).length;
+    const extinguisherValid = this.isValid(this.items.extinguisher) ? 1 : 0;
+    const firstAidValid = this.isValid(this.items.firstAid) ? 1 : 0;
+    return checklistChecked + extinguisherValid + firstAidValid;
   }
 
   get kitProgress(): number {
-    if (this.checklist.length === 0) return 1;
-    return this.checkedItemsCount / this.checklist.length;
+    const total = this.totalItems;
+    if (total === 0) return 1;
+    return this.checkedItemsCount / total;
   }
 
   get kitStatus(): { text: string, color: string } {
     const progress = this.kitProgress;
-    if (progress === 1) {
-      return { text: '¡Kit Completo!', color: 'success' };
-    }
-    if (progress >= 0.7) {
-      return { text: 'Casi listo', color: 'warning' };
-    }
+    if (progress === 1) return { text: '¡Kit Completo!', color: 'success' };
+    if (progress >= 0.7) return { text: 'Casi listo', color: 'warning' };
     return { text: 'Kit Incompleto', color: 'danger' };
   }
 

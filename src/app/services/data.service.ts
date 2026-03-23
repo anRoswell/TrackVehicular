@@ -160,6 +160,10 @@ export class DataService {
     return this.http.post<any>(`${this.apiUrl}/road-kit`, data);
   }
 
+  getStoresByCity(city: string, type: string = 'ROAD_KIT'): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/stores/city/${city}?type=${type}`);
+  }
+
   getVehicles(): Vehicle[] {
     return this.vehiclesSubject.value;
   }
