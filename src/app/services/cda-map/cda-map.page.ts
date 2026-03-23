@@ -83,7 +83,7 @@ export class CdaMapPage implements AfterViewInit, OnDestroy {
         },
       });
 
-      // User Location Marker
+      // Marcador de ubicación del usuario
       await this.newMap.addMarker({
         coordinate: { lat: this.userLat, lng: this.userLng },
         title: 'Tu ubicación',
@@ -93,15 +93,19 @@ export class CdaMapPage implements AfterViewInit, OnDestroy {
       await this.loadRelevantPoints();
       
       if (this.targetLat && this.targetLng) {
-        this.drawRoute(this.targetLat, this.targetLng);
+        this.calculateAndDrawRoute(this.targetLat, this.targetLng);
       }
+
+      this.newMap.setOnMarkerClickListener(async (marker) => {
+        this.calculateAndDrawRoute(marker.latitude, marker.longitude);
+      });
+
     } catch (e) {
-      console.error('Error creating map:', e);
+      console.error('Error al inicializar el mapa:', e);
     }
   }
 
   async loadRelevantPoints() {
-    // Si viene de un servicio específico (SOAT, CDA, etc), cargamos esos puntos
     if (this.storeType === 'CDA') {
       const cdas = this.data.getCDAs();
       const markers: Marker[] = cdas.map((cda: CDA) => ({
@@ -111,7 +115,6 @@ export class CdaMapPage implements AfterViewInit, OnDestroy {
       }));
       await this.newMap.addMarkers(markers);
     } else {
-      // Consultar stores por tipo desde el backend
       this.data.getStoresByCity('Cartagena', this.storeType).subscribe(async (stores) => {
         const markers: Marker[] = stores.map(s => ({
           coordinate: { lat: Number(s.lat), lng: Number(s.lng) },
@@ -123,16 +126,43 @@ export class CdaMapPage implements AfterViewInit, OnDestroy {
     }
   }
 
-  // Draw route using JS SDK (Directly on the canvas element overlay)
-  private drawRoute(destLat: number, destLng: number) {
-    // Note: Capacitor Google Maps doesn't support Direction API directly yet.
-    // We use the Native Intent/Universal Links as a fallback for high-quality routing
-    // or we could implement a polyline if the user stays in the app.
-    console.log(`Calculating route from ${this.userLat},${this.userLng} to ${destLat},${destLng}`);
+  private async calculateAndDrawRoute(destLat: number, destLng: number) {
+    if (typeof google === 'undefined') return;
+
+    const directionsService = new google.maps.DirectionsService();
     
-    // For now, let's enable an external navigation option which is better for UX
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${this.userLat},${this.userLng}&destination=${destLat},${destLng}&travelmode=driving`;
-    window.open(url, '_system');
+    const request = {
+      origin: { lat: this.userLat, lng: this.userLng },
+      destination: { lat: destLat, lng: destLng },
+      travelMode: google.maps.TravelMode.DRIVING
+    };
+
+    directionsService.route(request, async (result: any, status: any) => {
+      if (status === google.maps.DirectionsStatus.OK) {
+        const points = result.routes[0].overview_path.map((p: any) => ({
+          lat: p.lat(),
+          lng: p.lng()
+        }));
+
+        // Bypassing strict type check for Polyline path property
+        const polyline: any = {
+          path: points,
+          strokeColor: '#3880ff',
+          strokeWeight: 5,
+          strokeOpacity: 0.8
+        };
+
+        await (this.newMap as any).addPolylines([polyline]);
+
+        await this.newMap.setCamera({
+          coordinate: { lat: destLat, lng: destLng },
+          zoom: 15,
+          animate: true
+        });
+      } else {
+        console.error('Error al calcular la ruta:', status);
+      }
+    });
   }
 
   closeModal() {
